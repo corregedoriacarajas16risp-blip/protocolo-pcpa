@@ -434,6 +434,11 @@ input[type=file]:hover{border-color:#1a3a6b;background:#f0f4fa;}
     <div class="card" id="doc-detalhe-content"></div>
     <div id="resposta-form" style="display:none;margin-top:10px;" class="section-card">
       <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Responder documento</div>
+      <div style="background:var(--color-background-secondary,#f8f8f4);border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
+        <div style="font-size:11px;color:#888;margin-bottom:4px;">Respondendo como</div>
+        <div style="font-weight:600;" id="resp-nome-auto"></div>
+        <div style="font-size:12px;color:#666;" id="resp-setor-auto"></div>
+      </div>
       <div class="field"><label>Resposta</label><textarea id="resposta-texto" placeholder="Digite sua resposta..." style="min-height:90px;"></textarea></div>
       <div class="field"><label>Observação (opcional)</label><input type="text" id="resposta-obs" placeholder="Observação adicional..."></div>
       <div class="field"><label>Anexar documento (PDF ou Word)</label>
@@ -791,6 +796,23 @@ async function buscarProtocolo(){
     // Preencher despacho com observação original como referência
     if(d.obs) document.getElementById('tramitar-obs').value='Ref.: '+d.obs;
 
+    // Pré-selecionar setor destinatário atual
+    const setorAtual = d.setor||'';
+    const setorSelect = document.getElementById('tramitar-setor');
+    for(let opt of setorSelect.options){
+      if(opt.value===setorAtual){opt.selected=true;break;}
+    }
+    atualizarPoliciaisT();
+    // Pré-selecionar destinatário atual após carregar lista
+    setTimeout(()=>{
+      const polSelect=document.getElementById('tramitar-policial');
+      for(let opt of polSelect.options){
+        if(opt.textContent.includes(d.destinatario_nome||'__')){opt.selected=true;break;}
+      }
+    },400);
+    // Preencher despacho com ref. observação original
+    if(d.obs) document.getElementById('tramitar-obs').value='Ref.: '+d.obs;
+    // Mostrar info do remetente e destinatário atual
     document.getElementById('tramitar-doc').style.display='block';
     document.getElementById('ia-tramitar').style.display='none';
   }catch(e){document.getElementById('tramitar-nao-encontrado').style.display='block';}
@@ -891,7 +913,12 @@ async function abrirDoc(id){
     document.getElementById('doc-detalhe-content').innerHTML=`<div style="margin-bottom:14px;"><div class="proto-num">${doc.num}</div><div style="font-size:15px;font-weight:600;margin:6px 0;">${doc.tipo} — ${doc.assunto}</div><span class="status ${statusClass(doc.status)}">${doc.status}</span>${p?`<span class="prazo-box ${p.cls}" style="display:inline-block;margin-left:8px;">${p.txt}</span>`:''}</div><table style="width:100%;font-size:13px;border-collapse:collapse;"><tr><td style="color:#888;padding:5px 0;width:130px;">Remetente</td><td>${doc.remetente||'—'}</td></tr><tr><td style="color:#888;padding:5px 0;">Setor</td><td>${doc.setor}</td></tr><tr><td style="color:#888;padding:5px 0;">Data</td><td>${new Date(doc.data).toLocaleString('pt-BR')}</td></tr><tr><td style="color:#888;padding:5px 0;">Sigilo</td><td>${doc.sigilo}</td></tr>${doc.prazo_dias?`<tr><td style="color:#888;padding:5px 0;">Prazo</td><td>${doc.prazo_dias} dia(s) — vence ${new Date(doc.prazo_vencimento).toLocaleDateString('pt-BR')}</td></tr>`:''}${doc.obs?`<tr><td style="color:#888;padding:5px 0;">Observação</td><td>${doc.obs}</td></tr>`:''}</table>${respostaHTML}`;
     const podeResponder=!doc.respondido&&doc.destinatario_matricula===usuarioLogado?.matricula;
     document.getElementById('resposta-form').style.display=podeResponder?'block':'none';
-    if(podeResponder){document.getElementById('resposta-texto').value='';document.getElementById('resposta-obs').value='';}
+    if(podeResponder){
+      document.getElementById('resposta-texto').value='';
+      document.getElementById('resposta-obs').value='';
+      document.getElementById('resp-nome-auto').textContent=usuarioLogado?.nome||'—';
+      document.getElementById('resp-setor-auto').textContent=usuarioLogado?.setor||usuarioLogado?.cargo||'—';
+    }
     document.getElementById('doc-detalhe').style.display='block';
     if(abaAtual==='recebidos') renderInbox(); else renderEnviados();
   }catch(e){alert('Erro ao abrir.');}
@@ -902,7 +929,7 @@ async function responderDoc(){
   const texto=document.getElementById('resposta-texto').value.trim();const obs=document.getElementById('resposta-obs').value.trim();
   if(!texto){alert('Digite uma resposta.');return;}
   const agora=new Date().toISOString();
-  const historico=[...(docAberto.historico||[]),{data:agora,acao:'Resposta enviada ao remetente',de:docAberto.setor,para:'Remetente',destinatario:docAberto.remetente,obs:texto}];
+  const historico=[...(docAberto.historico||[]),{data:agora,acao:'Resposta enviada ao remetente',de:usuarioLogado?.setor||docAberto.setor,para:'Remetente',destinatario:docAberto.remetente,obs:(usuarioLogado?.nome?usuarioLogado.nome+': ':'')+texto}];
   // Upload do anexo de resposta se houver
   let respAnexoUrl=null, respAnexoNome=null;
   const respFile = document.getElementById('resposta-anexo-file').files[0];
