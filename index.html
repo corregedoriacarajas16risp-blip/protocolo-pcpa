@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teste Login</title>
+</head>
+<body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0d2545;margin:0;">
+<div style="background:#fff;padding:30px;border-radius:10px;width:300px;">
+  <h2 style="text-align:center;margin-bottom:20px;">Teste de Login</h2>
+  <div id="erro" style="display:none;color:red;margin-bottom:10px;text-align:center;">Usuário ou senha incorretos.</div>
+  <input type="text" id="usuario" placeholder="Usuário" style="width:100%;padding:8px;margin-bottom:10px;box-sizing:border-box;font-size:14px;">
+  <input type="password" id="senha" placeholder="Senha" style="width:100%;padding:8px;margin-bottom:10px;box-sizing:border-box;font-size:14px;">
+  <button id="btn-entrar" style="width:100%;padding:10px;background:#1a3a6b;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:15px;">Entrar</button>
+  <div id="ok" style="display:none;color:green;margin-top:10px;text-align:center;font-weight:bold;">Login OK!</div>
+</div>
+<script>
+var USUARIOS = [
+  {login:'Marcio', senha:'5914032'},
+  {login:'Gabriel', senha:'5914034'}
+];
+
+function fazerLogin(){
+  var u = document.getElementById('usuario').value.trim();
+  var s = document.getElementById('senha').value.trim();
+  var found = false;
+  for(var i=0; i<USUARIOS.length; i++){
+    if(USUARIOS[i].login.toLowerCase() === u.toLowerCase() && USUARIOS[i].senha === s){
+      found = true;
+      break;
+    }
+  }
+  if(found){
+    document.getElementById('erro').style.display='none';
+    document.getElementById('ok').style.display='block';
+  } else {
+    document.getElementById('erro').style.display='block';
+    document.getElementById('ok').style.display='none';
+  }
+}
+
+document.getElementById('btn-entrar').addEventListener('click', fazerLogin);
+document.getElementById('senha').addEventListener('keydown', function(e){
+  if(e.key === 'Enter') fazerLogin();
+});
+document.getElementById('usuario').addEventListener('keydown', function(e){
+  if(e.key === 'Enter') fazerLogin();
+});
+</script>
+</body>
+</html>
