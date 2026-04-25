@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CGPC — Controle de Ofícios e Prazos — 10ª RISP</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a;background:#f0f2f5;}
+
+/* ── LOGIN ── */
+#tela-login{position:fixed;inset:0;background:linear-gradient(160deg,#071525 0%,#0d2545 55%,#122d55 100%);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;}
+.login-card{background:#fff;border-radius:16px;padding:38px 34px;width:100%;max-width:370px;box-shadow:0 16px 60px rgba(0,0,0,.5);}
+.login-title{font-size:17px;font-weight:700;text-align:center;color:#0d2545;margin-bottom:4px;}
+.login-sub{font-size:12px;color:#888;text-align:center;margin-bottom:20px;line-height:1.6;}
+.login-field{margin-bottom:12px;}
+.login-field label{font-size:12px;color:#666;display:block;margin-bottom:4px;}
+.login-field input{width:100%;padding:10px 12px;border:1px solid #d0d0c8;border-radius:8px;font-size:14px;outline:none;}
+.login-field input:focus{border-color:#1a3a6b;box-shadow:0 0 0 2px rgba(26,58,107,.1);}
+.login-btn{width:100%;padding:12px;background:#1a3a6b;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;margin-top:6px;}
+.login-btn:hover{background:#152f58;}
+.login-erro{display:none;background:rgba(220,50,50,.15);color:#c03030;font-size:12px;text-align:center;padding:8px;border-radius:6px;margin-bottom:10px;border:1px solid rgba(220,50,50,.25);}
+.login-rodape{font-size:11px;color:#aaa;text-align:center;margin-top:16px;line-height:1.5;}
+
+/* ── HEADER ── */
+.header{background:#fff;border-bottom:1px solid #e0e0d8;padding:10px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.badge-sicorp{background:linear-gradient(135deg,#0d2545,#1a3a6b);color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:6px;letter-spacing:.5px;box-shadow:0 2px 6px rgba(13,37,69,.4);}
+.header-title{flex:1;font-size:14px;font-weight:500;color:#1a1a1a;}
+.avatar{width:30px;height:30px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0C447C;flex-shrink:0;}
+.db-dot{width:7px;height:7px;border-radius:50%;background:#ccc;display:inline-block;}
+.db-dot.ok{background:#639922;}.db-dot.err{background:#E24B4A;}
+
+/* ── LAYOUT ── */
+.content{padding:20px;display:none;max-width:1200px;margin:0 auto;}
+.content.active{display:block;}
+.section-card{background:#fff;border:1px solid #e0e0d8;border-radius:10px;padding:16px 18px;margin-bottom:14px;}
+.section-title{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;}
+
+/* ── MÉTRICAS ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;}
+.kpi-card{background:#fff;border:1px solid #e0e0d8;border-radius:10px;padding:14px 12px;text-align:center;}
+.kpi-val{font-size:28px;font-weight:800;line-height:1;}
+.kpi-label{font-size:11px;color:#888;margin-top:4px;}
+
+/* ── FORM ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+@media(max-width:700px){.grid2,.grid3{grid-template-columns:1fr;}}
+.field{margin-bottom:0;}
+label{font-size:12px;color:#555;display:block;margin-bottom:4px;font-weight:500;}
+input,select,textarea{width:100%;font-size:13px;padding:8px 10px;border:1px solid #d0d0c8;border-radius:6px;background:#fff;color:#1a1a1a;outline:none;}
+input:focus,select:focus,textarea:focus{border-color:#1a3a6b;box-shadow:0 0 0 2px rgba(26,58,107,.1);}
+textarea{resize:vertical;min-height:72px;}
+
+/* ── BOTÕES ── */
+.btn{padding:7px 14px;border:1px solid #d0d0c8;border-radius:6px;background:#fff;color:#1a1a1a;cursor:pointer;font-size:13px;transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+.btn:hover{background:#f0f0e8;}
+.btn.btn-primary{background:#1a3a6b;color:#fff;border-color:#1a3a6b;}
+.btn.btn-primary:hover{background:#152f58;}
+.btn.btn-primary:disabled{background:#8aa0be;cursor:not-allowed;}
+.btn.btn-danger{background:#FCEBEB;color:#791F1F;border-color:#F09595;}
+.btn.btn-danger:hover{background:#f8d8d8;}
+.btn.btn-sm{padding:4px 10px;font-size:12px;}
+
+/* ── BADGES ── */
+.badge-status{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+.bs-pendente{background:#FAEEDA;color:#633806;}
+.bs-respondido{background:#E6F1FB;color:#0C447C;}
+.bs-atendido{background:#EAF3DE;color:#27500A;}
+.bs-vencido{background:#FCEBEB;color:#791F1F;}
+
+/* ── TABELA ── */
+.tabela-wrap{overflow-x:auto;border-radius:8px;border:1px solid #e0e0d8;}
+table.proc-table{width:100%;border-collapse:collapse;font-size:13px;}
+table.proc-table thead tr{background:#f5f5f0;}
+table.proc-table th{padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #e0e0d8;white-space:nowrap;}
+table.proc-table td{padding:10px 12px;border-bottom:1px solid #f0f0e8;vertical-align:middle;}
+table.proc-table tr:last-child td{border-bottom:none;}
+table.proc-table tbody tr:hover{background:#f8f9ff;cursor:pointer;}
+.proc-num{font-family:monospace;font-size:12px;font-weight:700;color:#1a3a6b;}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:none;align-items:center;justify-content:center;padding:16px;overflow-y:auto;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:#fff;border-radius:14px;width:100%;max-width:620px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:modalIn .18s ease;margin:auto;}
+@keyframes modalIn{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-header{padding:16px 20px;border-bottom:1px solid #e0e0d8;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:2;}
+.modal-header h2{font-size:15px;font-weight:700;color:#0d2545;}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#888;line-height:1;padding:4px 8px;border-radius:4px;}
+.modal-close:hover{background:#f0f0e8;}
+.modal-body{padding:20px;}
+.modal-section{margin-bottom:18px;}
+.modal-section-title{font-size:11px;font-weight:700;color:#1a3a6b;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e8f0fb;}
+
+/* ── AUTOCOMPLETE ── */
+.autocomplete-wrap{position:relative;}
+.ac-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #d0d0c8;border-top:none;border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;z-index:500;box-shadow:0 4px 12px rgba(0,0,0,.12);}
+.ac-item{padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0e8;}
+.ac-item:last-child{border-bottom:none;}
+.ac-item:hover,.ac-item.focused{background:#f0f6ff;}
+.ac-item .ac-name{font-weight:600;color:#0d2545;}
+.ac-item .ac-unit{font-size:11px;color:#888;margin-top:1px;}
+.ac-item .ac-phone{font-size:11px;color:#1a3a6b;font-family:monospace;}
+
+/* ── PRAZOS ── */
+.prazo-pills{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0;}
+.pill{padding:4px 14px;border:1px solid #d0d0c8;border-radius:20px;font-size:12px;cursor:pointer;transition:all .15s;background:#fff;color:#555;font-family:monospace;}
+.pill:hover,.pill.sel{background:#1a3a6b;color:#fff;border-color:#1a3a6b;}
+
+/* ── ALERTAS ── */
+.alerta-prazo{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:8px;margin-bottom:6px;cursor:pointer;}
+.alerta-prazo:hover{filter:brightness(.96);}
+.alerta-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.alerta-corpo{flex:1;}
+.alerta-titulo{font-size:13px;font-weight:700;}
+.alerta-sub{font-size:11px;margin-top:2px;opacity:.85;}
+.alerta-vencido{background:#FCEBEB;border:1px solid #F09595;color:#791F1F;}
+.alerta-hoje{background:#FAEEDA;border:1px solid #EF9F27;color:#633806;}
+
+/* ── FILTROS ── */
+.filtros-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;}
+.filtros-bar .field{margin-bottom:0;min-width:140px;}
+.search-input{flex:1;min-width:200px;}
+
+/* ── MISC ── */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(26,58,107,.2);border-top-color:#1a3a6b;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:24px;right:24px;background:#1a3a6b;color:#fff;padding:11px 20px;border-radius:8px;font-size:13px;display:none;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25);}
+.vazio{color:#aaa;font-size:13px;text-align:center;padding:40px 20px;}
+.row-btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.hist-item{padding:7px 0;border-bottom:1px solid #f0f0e8;font-size:12px;}
+.hist-item:last-child{border-bottom:none;}
+.canal-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;margin-right:4px;font-weight:600;}
+.canal-pae{background:#E6F1FB;color:#0C447C;}
+.canal-wpp{background:#EAF3DE;color:#27500A;}
+.dias-label{font-family:monospace;font-size:12px;font-weight:700;}
+.dias-neg{color:#791F1F;}.dias-zero{color:#633806;}.dias-pos{color:#27500A;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN -->
+<div id="tela-login">
+  <div class="login-card">
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="width:64px;height:64px;background:#1a3a6b;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      </div>
+    </div>
+    <div class="login-title">CGPC — Ofícios</div>
+    <div class="login-sub">Controle de Ofícios e Prazos<br>Corregedoria Regional — 10ª RISP</div>
+    <hr style="border:none;border-top:1px solid #e0e0d8;margin:16px 0;">
+    <div class="login-erro" id="login-erro">Usuário ou senha incorretos.</div>
+    <div class="login-field"><label>Usuário</label><input type="text" id="login-usuario" placeholder="Seu primeiro nome" autocomplete="off"></div>
+    <div class="login-field"><label>Senha</label><input type="password" id="login-senha" placeholder="Sua matrícula funcional"></div>
+    <button class="login-btn" onclick="fazerLogin()" id="btn-login">Entrar</button>
+    <div class="login-rodape">Polícia Civil do Estado do Pará — CGPC<br>Acesso restrito a servidores autorizados</div>
+  </div>
+</div>
+
+<!-- SISTEMA -->
+<div id="sistema" style="display:none;">
+  <div class="header">
+    <div class="badge-sicorp">CGPC</div>
+    <div class="header-title">Controle de Ofícios e Prazos — 10ª RISP</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:#888;">
+        <div class="db-dot" id="db-dot"></div>
+        <span id="db-txt">Conectando...</span>
+      </div>
+      <div class="avatar" id="h-avatar"></div>
+      <span style="font-size:12px;font-weight:600;color:#333;flex-shrink:0;" id="h-nome"></span>
+      <button onclick="fazerLogout()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border:none;border-radius:6px;background:#FCEBEB;color:#791F1F;font-size:12px;font-weight:600;cursor:pointer;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sair
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <div class="content active" id="tab-principal">
+
+    <!-- KPIs -->
+    <div class="kpi-grid" id="kpis"></div>
+
+    <!-- ALERTAS -->
+    <div id="painel-alertas" style="display:none;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;color:#791F1F;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Alertas de Prazo
+      </div>
+      <div id="lista-alertas"></div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="section-card" style="padding:12px 16px;">
+      <div class="filtros-bar">
+        <div class="field search-input">
+          <label>Buscar</label>
+          <input type="text" id="busca-texto" placeholder="Nº ofício, delegado, unidade, assunto..." oninput="filtrar()">
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select id="f-status-filtro" onchange="filtrar()">
+            <option value="">Todos</option>
+            <option value="pendente">Pendente</option>
+            <option value="respondido">Respondido</option>
+            <option value="atendido">Atendido</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Origem</label>
+          <select id="f-origem-filtro" onchange="filtrar()">
+            <option value="">Todas</option>
+            <option value="MP">Ministério Público</option>
+            <option value="Judiciário">Judiciário</option>
+            <option value="Corregedoria">Corregedoria</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Unidade</label>
+          <select id="f-unidade-filtro" onchange="filtrar()">
+            <option value="">Todas</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Prazo</label>
+          <select id="f-prazo-filtro" onchange="filtrar()">
+            <option value="">Todos</option>
+            <option value="vencido">Vencidos</option>
+            <option value="hoje">Vencem hoje</option>
+            <option value="proximos">Próximos 5 dias</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:6px;align-items:flex-end;">
+          <button class="btn btn-primary btn-sm" onclick="carregarOficios()">↺ Atualizar</button>
+          <button class="btn btn-primary" onclick="abrirModal()">+ Novo ofício</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#888;" id="lista-info"></div>
+    </div>
+
+    <div class="tabela-wrap">
+      <table class="proc-table">
+        <thead>
+          <tr>
+            <th>Nº Ofício</th>
+            <th>Delegado</th>
+            <th>Unidade</th>
+            <th>Origem</th>
+            <th>Assunto</th>
+            <th>Envio</th>
+            <th>Prazo</th>
+            <th>Dias</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-corpo">
+          <tr><td colspan="10" class="vazio"><span class="spinner"></span> Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVO/EDITAR -->
+<div class="modal-overlay" id="modal-novo" onclick="fecharModal('modal-novo',event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="modal-novo-titulo">Novo Ofício</h2>
+      <button class="modal-close" onclick="fecharModal('modal-novo')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">Identificação</div>
+        <div class="grid2" style="gap:12px;margin-bottom:12px;">
+          <div class="field"><label>Nº do ofício *</label><input id="f-num" type="text" placeholder="Ex: 012/2025-CGPC"></div>
+          <div class="field"><label>Data de envio *</label><input id="f-envio" type="date"></div>
+        </div>
+        <div class="field" style="margin-bottom:12px;">
+          <label>Delegado *</label>
+          <div class="autocomplete-wrap">
+            <input id="f-delegado" type="text" placeholder="Digite o nome do delegado..." autocomplete="off" oninput="acBuscar(this.value)" onkeydown="acKeydown(event)">
+            <div class="ac-list" id="ac-list" style="display:none"></div>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:12px;">
+          <label>Unidade / Delegacia *</label>
+          <select id="f-unidade-form"><option value="">— selecione —</option></select>
+        </div>
+        <div class="grid2" style="gap:12px;margin-bottom:12px;">
+          <div class="field"><label>Telefone do delegado</label><input id="f-contato" type="text" placeholder="Preenchido automaticamente"></div>
+          <div class="field"><label>E-mail da unidade</label><input id="f-email-unidade" type="text" placeholder="Preenchido automaticamente"></div>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Requisição</div>
+        <div class="grid2" style="gap:12px;margin-bottom:12px;">
+          <div class="field"><label>Origem *</label>
+            <select id="f-origem-f">
+              <option value="MP">Ministério Público</option>
+              <option value="Judiciário">Judiciário</option>
+              <option value="Corregedoria">Corregedoria</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+          <div class="field"><label>Nº PAE / ref. e-mail</label><input id="f-ref" type="text" placeholder="PAE nº ou assunto do e-mail"></div>
+        </div>
+        <div class="field" style="margin-bottom:12px;">
+          <label>Assunto / diligência solicitada *</label>
+          <textarea id="f-assunto" placeholder="Descreva a diligência..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Prazo</div>
+        <div class="prazo-pills">
+          <span class="pill" onclick="setPrazo(2,this)">48h</span>
+          <span class="pill" onclick="setPrazo(5,this)">5d</span>
+          <span class="pill" onclick="setPrazo(10,this)">10d</span>
+          <span class="pill" onclick="setPrazo(15,this)">15d</span>
+          <span class="pill" onclick="setPrazo(30,this)">30d</span>
+          <span class="pill" onclick="setPrazo(90,this)">90d</span>
+          <span class="pill" onclick="setPrazo(0,this)">Outro</span>
+        </div>
+        <input id="f-prazo" type="date" style="margin-top:4px;">
+        <div class="grid2" style="gap:12px;margin-top:12px;">
+          <div class="field"><label>Enviado via PAE?</label><select id="f-pae"><option value="sim">Sim</option><option value="nao">Não</option></select></div>
+          <div class="field"><label>Enviado via WhatsApp?</label><select id="f-wpp"><option value="sim">Sim</option><option value="nao">Não</option></select></div>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Observações</div>
+        <textarea id="f-obs" placeholder="Anotações adicionais..."></textarea>
+      </div>
+
+      <div class="row-btns" style="margin-top:8px;">
+        <button class="btn btn-primary" id="btn-salvar" onclick="salvar()">Salvar ofício</button>
+        <button class="btn" onclick="fecharModal('modal-novo')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALHE/EDIÇÃO -->
+<div class="modal-overlay" id="modal-detalhe" onclick="fecharModal('modal-detalhe',event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="d-num"></h2>
+      <button class="modal-close" onclick="fecharModal('modal-detalhe')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:#888;margin-bottom:14px;" id="d-meta"></div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Identificação</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div><div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Delegado</div><div style="font-size:13px;" id="d-delegado"></div><div style="font-size:11px;color:#1a3a6b;font-family:monospace;margin-top:2px;" id="d-contato"></div></div>
+          <div><div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Unidade</div><div style="font-size:13px;" id="d-unidade"></div><div style="font-size:11px;color:#888;margin-top:2px;" id="d-email-unidade"></div></div>
+          <div><div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Origem</div><div style="font-size:13px;" id="d-origem"></div></div>
+          <div><div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Referência (PAE/e-mail)</div><div style="font-size:13px;" id="d-ref"></div></div>
+          <div><div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Data de envio</div><div style="font-size:13px;" id="d-envio"></div></div>
+          <div><div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Prazo final</div><div style="font-size:13px;" id="d-prazo"></div></div>
+          <div><div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Canais de envio</div><div style="font-size:13px;" id="d-canais"></div></div>
+        </div>
+        <div style="background:#f8f9ff;border-radius:6px;padding:10px 12px;font-size:13px;margin-bottom:6px;" id="d-assunto"></div>
+        <div style="background:#fafaf4;border-radius:6px;padding:10px 12px;font-size:13px;font-style:italic;color:#666;display:none;" id="d-obs"></div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Atualizar status</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="d-status-btns"></div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Prorrogar prazo</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="date" id="d-nova-data" style="max-width:180px;">
+          <input type="text" id="d-prorrog-motivo" placeholder="Motivo da prorrogação" style="flex:1;min-width:180px;">
+          <button class="btn btn-primary btn-sm" onclick="prorrogar()">Prorrogar</button>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Histórico</div>
+        <div id="d-hist"></div>
+      </div>
+
+      <div class="row-btns" style="margin-top:8px;">
+        <button class="btn btn-danger" onclick="excluir()">Excluir</button>
+        <button class="btn btn-primary" onclick="editarAtual()">Editar</button>
+        <button class="btn" onclick="fecharModal('modal-detalhe')">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// CONFIGURAÇÃO SUPABASE
+// ═══════════════════════════════════════════
+const SB_URL='https://tkkxjhzarmcnlasuwdww.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRra3hqaHphcm1jbmxhc3V3ZHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjgwOTksImV4cCI6MjA5MjEwNDA5OX0.MKqZTxv45bD8v6U_69u_mZdcvxxI3FlEij4wNs6vtDk';
+const TIPO='oficio_cgpc';
+
+// ═══════════════════════════════════════════
+// USUÁRIOS — mesmo padrão do SICORP
+// ═══════════════════════════════════════════
+const USUARIOS=[
+  {login:'Marcio',    senha:'5914032',  nome:'Marcio Brasil Maio',                     cargo:'Corregedor Regional',       matricula:'5914032',  setor:'Corregedoria Regional da 16ª RISP'},
+  {login:'Marcelo',   senha:'57233522', nome:'Marcelo Delgado Dias',                    cargo:'Corregedor Regional',       matricula:'57233522', setor:'Corregedoria Regional da 10ª RISP'},
+  {login:'Samantha',  senha:'57233682', nome:'Samantha Sanglard Oliveira Bittencourth', cargo:'Escrivã de Polícia Civil',   matricula:'57233682', setor:'Corregedoria Regional da 10ª RISP'},
+  {login:'Henry',     senha:'5913812',  nome:'Henry Pedro Lorenz Neto',                 cargo:'Escrivão de Polícia Civil',  matricula:'5913812',  setor:'Corregedoria Regional da 16ª RISP'},
+  {login:'Alenilde',  senha:'57233675', nome:'Alenilde Barroso Gonçalves',              cargo:'Escrivã de Polícia Civil',   matricula:'57233675', setor:'Corregedoria Regional da 16ª RISP'},
+  {login:'Antonio',   senha:'5913835',  nome:'Antonio Washington Portela Junior',       cargo:'Investigador de Polícia Civil',matricula:'5913835',setor:'Corregedoria Regional da 16ª RISP'},
+];
+
+// ═══════════════════════════════════════════
+// DADOS 10ª RISP
+// ═══════════════════════════════════════════
+const UNIDADES=[
+  {id:'risp10_sede',  nome:'10ª RISP — Sede Marabá',                email:'cartoriomarabasup@gmail.com'},
+  {id:'sec21',        nome:'21ª Seccional de Marabá',                email:'cartoriomaraba@policiacivil.pa.gov.br'},
+  {id:'uisp_saofelix',nome:'UISP São Félix',                         email:'uispsaofelix@gmail.com'},
+  {id:'cidadenova',   nome:'Unidade Cidade Nova — Marabá',           email:'MARABA.CIDADENOVA@policiacivil.pa.gov.br'},
+  {id:'dh_maraba',    nome:'Delegacia de Homicídios — Marabá',       email:'dhmarabapa@gmail.com'},
+  {id:'deam_maraba',  nome:'DEAM Marabá',                            email:'maraba.deam@gmail.com'},
+  {id:'deaca_maraba', nome:'DEACA Marabá',                           email:'maraba.deaca@gmail.com'},
+  {id:'deca_maraba',  nome:'DECA Marabá',                            email:'decapoliciacivil@gmail.com'},
+  {id:'abel',         nome:'Delegacia de Abel Figueiredo',           email:'abelfigueiredo@policiacivil.pa.gov.br'},
+  {id:'bomjesus',     nome:'Delegacia de Bom Jesus do Tocantins',    email:'bjtocantins@policiacivil.pa.gov.br'},
+  {id:'brejo',        nome:'Delegacia de Brejo Grande do Araguaia',  email:'cartorio.bga.pcpa@gmail.com'},
+  {id:'itupiranga',   nome:'Delegacia de Itupiranga',                email:'depol.itupiranga@gmail.com'},
+  {id:'novaipixuna',  nome:'Delegacia de Nova Ipixuna',              email:'novaipixuna@policiacivil.pa.gov.br'},
+  {id:'palestina',    nome:'Delegacia de Palestina do Pará',         email:'delegacia.palestina22@gmail.com'},
+  {id:'picarra',      nome:'Delegacia de Piçarra',                   email:'depolpicarra2022@gmail.com'},
+  {id:'rondon',       nome:'Delegacia de Rondon do Pará',            email:'DelegaciadeRondondoPara@gmail.com'},
+  {id:'sdomingos',    nome:'Delegacia de São Domingos do Araguaia',  email:'araguaiadomingos@gmail.com'},
+  {id:'sgeraldo',     nome:'Delegacia de São Geraldo do Araguaia',   email:'depolsga@gmail.com'},
+  {id:'sjoao',        nome:'Delegacia de São João do Araguaia',      email:'depolsja@gmail.com'},
+];
+
+const DELEGADOS=[
+  {nome:'Vinícius Cardoso Neves',            cargo:'Superintendente',  telefone:'(94) 98145-1399', unidade:'risp10_sede'},
+  {nome:'Eliene Carla de Lima',              cargo:'Assistente DPC',   telefone:'(94) 98404-9249', unidade:'risp10_sede'},
+  {nome:'Antonio Mororo Junior',             cargo:'Diretor',          telefone:'(94) 99211-1920', unidade:'sec21'},
+  {nome:'Bruno Martins Mesquita',            cargo:'DPC',              telefone:'(82) 99696-4030', unidade:'sec21'},
+  {nome:'Pedro Marinho de Souza',            cargo:'DPC',              telefone:'(99) 99152-4890', unidade:'sec21'},
+  {nome:'Luiz Otavio Ernesto de Barros',     cargo:'DPC',              telefone:'(94) 99157-7985', unidade:'sec21'},
+  {nome:'William Lopes Crispim',             cargo:'DPC',              telefone:'(94) 99152-6437', unidade:'sec21'},
+  {nome:'Lucas Assis Nunes',                 cargo:'DPC',              telefone:'(94) 99256-4958', unidade:'sec21'},
+  {nome:'Washington Santos de Oliveira',     cargo:'DPC',              telefone:'(94) 99249-9953', unidade:'sec21'},
+  {nome:'Rodrigo Gonçalves Graças',          cargo:'DPC',              telefone:'(62) 99106-6835', unidade:'sec21'},
+  {nome:'Djalma Antonio Paula dos Santos',   cargo:'DPC',              telefone:'(31) 99917-4844', unidade:'uisp_saofelix'},
+  {nome:'Elcio Fideles de Deus',             cargo:'DPC',              telefone:'(93) 98422-9644', unidade:'cidadenova'},
+  {nome:'Gabriel Angelo de Oliveira Santos', cargo:'DPC',              telefone:'(31) 98153-9299', unidade:'cidadenova'},
+  {nome:'Vítor Luiz Gonçalves Rocha da Costa',cargo:'DPC',            telefone:'(31) 99372-8736', unidade:'dh_maraba'},
+  {nome:'Simone Felinto França',             cargo:'DPC',              telefone:'(94) 98176-8666', unidade:'dh_maraba'},
+  {nome:'Leandro da Conceição Benício',      cargo:'DPC',              telefone:'(987) 98116-4865',unidade:'dh_maraba'},
+  {nome:'Bianca Maria Leão dos Santos Vieira',cargo:'DPC Titular',    telefone:'(99) 99190-2956', unidade:'deam_maraba'},
+  {nome:'Allana Christhy Fernandes Araujo',  cargo:'DPC',              telefone:'(62) 98232-9599', unidade:'deam_maraba'},
+  {nome:'Luciana Costa de Menezes',          cargo:'DPC',              telefone:'(99) 98164-6058', unidade:'deam_maraba'},
+  {nome:'Yasmin Santos Andrade Faria',       cargo:'DPC',              telefone:'(61) 99833-2380', unidade:'deam_maraba'},
+  {nome:'Laiz Ruiz de Souza',                cargo:'DPC',              telefone:'(44) 99978-8024', unidade:'deam_maraba'},
+  {nome:'Lívia Rodrigues Queiroz Ferraz',    cargo:'DPC',              telefone:'(99) 981232672',  unidade:'deaca_maraba'},
+  {nome:'Vannir Wagner Fernandes Sousa',     cargo:'DPC',              telefone:'(71) 99217-9098', unidade:'deca_maraba'},
+  {nome:'Jose Lenio Ferreira Duarte',        cargo:'DPC',              telefone:'(94) 99146-7231', unidade:'abel'},
+  {nome:'Eric de Lima Santos',               cargo:'DPC',              telefone:'(69) 99255-0596', unidade:'bomjesus'},
+  {nome:'Igor Wanick Mattos Guimarães',      cargo:'DPC',              telefone:'(27) 99738-9338', unidade:'brejo'},
+  {nome:'Timoteo de Oliveira Soares',        cargo:'DPC',              telefone:'(94) 98115-8100', unidade:'itupiranga'},
+  {nome:'Leandro Pontes Oliveira',           cargo:'DPC',              telefone:'(61) 99907-7760', unidade:'itupiranga'},
+  {nome:'Celso Menditti Lima',               cargo:'DPC',              telefone:'(28) 99920-7420', unidade:'novaipixuna'},
+  {nome:'Jailson Lucena da Silva',           cargo:'DPC',              telefone:'(94) 99227-7237', unidade:'palestina'},
+  {nome:'Rodolfo Carvalho Rocha',            cargo:'DPC',              telefone:'(94) 99193-4701', unidade:'picarra'},
+  {nome:'Wellton dos Santos Fernandes',      cargo:'DPC',              telefone:'(99) 98155-0659', unidade:'rondon'},
+  {nome:'Thiago Santos da Silva',            cargo:'DPC',              telefone:'(94) 99247-5701', unidade:'rondon'},
+  {nome:'Walter Ruiz Bogaz Neto',            cargo:'DPC',              telefone:'(17) 93300-0918', unidade:'sdomingos'},
+  {nome:'Daniel Albrecht Ferreira',          cargo:'DPC',              telefone:'(93) 98102-6604', unidade:'sdomingos'},
+  {nome:'Edesio Ribeiro dos Santos',         cargo:'DPC',              telefone:'(63) 98401-6526', unidade:'sgeraldo'},
+  {nome:'Toni Rinaldo Rodrigues de Vargas',  cargo:'DPC',              telefone:'(94) 98164-7006', unidade:'sjoao'},
+];
+
+// ═══════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════
+let usuarioLogado=null;
+let oficios=[];
+let detailId=null;
+let editId=null;
+let acResultados=[];
+let acFocused=-1;
+const hoje=new Date();hoje.setHours(0,0,0,0);
+
+// ═══════════════════════════════════════════
+// INICIALIZAR SELECTS
+// ═══════════════════════════════════════════
+(function(){
+  const sf=document.getElementById('f-unidade-form');
+  const sf2=document.getElementById('f-unidade-filtro');
+  UNIDADES.forEach(u=>{
+    sf.innerHTML+=`<option value="${u.id}">${u.nome}</option>`;
+    sf2.innerHTML+=`<option value="${u.id}">${u.nome}</option>`;
+  });
+})();
+
+document.getElementById('f-unidade-form').addEventListener('change',function(){
+  const u=UNIDADES.find(x=>x.id===this.value);
+  if(u) document.getElementById('f-email-unidade').value=u.email;
+});
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function toast(msg,dur=3000){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',dur);}
+function fmtDate(s){if(!s)return'—';const d=new Date(s.length===10?s+'T12:00:00':s);return d.toLocaleDateString('pt-BR');}
+function diasRestantes(prazoStr){if(!prazoStr)return 999;const p=new Date(prazoStr.length===10?prazoStr+'T12:00:00':prazoStr);return Math.round((p-hoje)/(1000*60*60*24));}
+function getSenha(mat){return localStorage.getItem('cgpc_senha_'+mat)||USUARIOS.find(u=>u.matricula===mat)?.senha||'';}
+
+async function sbFetch(path,opts={}){
+  const res=await fetch(SB_URL+path,{...opts,headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation',...(opts.headers||{})}});
+  const txt=await res.text();
+  const json=txt?JSON.parse(txt):null;
+  if(!res.ok) throw new Error((json?.message||json?.hint||'Erro HTTP '+res.status));
+  return json;
+}
+
+async function auditoria(acao,detalhes){
+  if(!usuarioLogado)return;
+  await fetch(SB_URL+'/rest/v1/auditoria',{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+    body:JSON.stringify({acao,detalhes,usuario:usuarioLogado.nome,matricula:usuarioLogado.matricula,cargo:usuarioLogado.cargo,setor:usuarioLogado.setor,proc_tipo:TIPO})
+  }).catch(()=>{});
+}
+
+// ═══════════════════════════════════════════
+// LOGIN / LOGOUT
+// ═══════════════════════════════════════════
+document.getElementById('login-usuario').addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin();});
+document.getElementById('login-senha').addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin();});
+
+function fazerLogin(){
+  const u=(document.getElementById('login-usuario').value||'').trim();
+  const s=(document.getElementById('login-senha').value||'').trim();
+  const erro=document.getElementById('login-erro');
+  erro.style.display='none';
+  const user=USUARIOS.find(x=>x.login.toLowerCase()===u.toLowerCase());
+  if(!user||s!==getSenha(user.matricula)){erro.style.display='block';return;}
+  usuarioLogado=user;
+  const ini=user.nome.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
+  document.getElementById('h-avatar').textContent=ini;
+  document.getElementById('h-nome').textContent=user.nome.split(' ').slice(0,2).join(' ');
+  document.getElementById('tela-login').style.display='none';
+  document.getElementById('sistema').style.display='block';
+  testarConexao();
+  auditoria('login','Acesso ao sistema de ofícios');
+  carregarOficios();
+}
+
+function fazerLogout(){
+  auditoria('logout','Saída do sistema de ofícios');
+  usuarioLogado=null;
+  document.getElementById('login-usuario').value='';
+  document.getElementById('login-senha').value='';
+  document.getElementById('sistema').style.display='none';
+  document.getElementById('tela-login').style.display='flex';
+}
+
+async function testarConexao(){
+  try{await sbFetch('/rest/v1/documentos?limit=1');document.getElementById('db-dot').className='db-dot ok';document.getElementById('db-txt').textContent='Banco conectado';}
+  catch(e){document.getElementById('db-dot').className='db-dot err';document.getElementById('db-txt').textContent='Sem conexão';}
+}
+
+// ═══════════════════════════════════════════
+// CARREGAR E FILTRAR
+// ═══════════════════════════════════════════
+async function carregarOficios(){
+  document.getElementById('tabela-corpo').innerHTML='<tr><td colspan="10" class="vazio"><span class="spinner"></span> Carregando...</td></tr>';
+  try{
+    const data=await sbFetch(`/rest/v1/documentos?tipo=eq.${TIPO}&order=prazo_vencimento.asc&limit=1000`)||[];
+    oficios=data;
+    renderKpis();
+    renderAlertas();
+    filtrar();
+  }catch(e){document.getElementById('tabela-corpo').innerHTML='<tr><td colspan="10" class="vazio" style="color:#791F1F;">Erro ao carregar.</td></tr>';}
+}
+
+function renderKpis(){
+  let venc=0,hoj=0,atend=0;
+  oficios.forEach(o=>{
+    if(o.status==='atendido'){atend++;return;}
+    const d=diasRestantes(o.prazo_vencimento?.split('T')[0]);
+    if(d<0)venc++;else if(d<=1)hoj++;
+  });
+  document.getElementById('kpis').innerHTML=[
+    {val:oficios.length, label:'Total de ofícios',      cor:'#1a3a6b', bg:'#E6F1FB'},
+    {val:venc,           label:'Vencidos',               cor:'#791F1F', bg:'#FCEBEB'},
+    {val:hoj,            label:'Vencem hoje / amanhã',   cor:'#633806', bg:'#FAEEDA'},
+    {val:atend,          label:'Atendidos',               cor:'#27500A', bg:'#EAF3DE'},
+  ].map(k=>`<div class="kpi-card" style="border-top:3px solid ${k.cor};background:${k.bg};"><div class="kpi-val" style="color:${k.cor};">${k.val}</div><div class="kpi-label">${k.label}</div></div>`).join('');
+}
+
+function renderAlertas(){
+  const painel=document.getElementById('painel-alertas');
+  const alertas=[];
+  oficios.filter(o=>o.status!=='atendido').forEach(o=>{
+    const prazoStr=o.prazo_vencimento?.split('T')[0];
+    const d=diasRestantes(prazoStr);
+    const label=`${o.num||'—'} — ${o.destinatario_nome||'—'}`;
+    if(d<0) alertas.push({cls:'alerta-vencido',icon:'⚠️',titulo:`Prazo VENCIDO há ${Math.abs(d)} dia(s)`,sub:`Venceu em ${fmtDate(prazoStr)}`,label,id:o.id});
+    else if(d===0) alertas.push({cls:'alerta-hoje',icon:'🔴',titulo:'Prazo vence HOJE',sub:`${label}`,label:'',id:o.id});
+    else if(d===1) alertas.push({cls:'alerta-hoje',icon:'🟡',titulo:'Prazo vence AMANHÃ',sub:`${label}`,label:'',id:o.id});
+  });
+  if(!alertas.length){painel.style.display='none';return;}
+  painel.style.display='block';
+  document.getElementById('lista-alertas').innerHTML=alertas.map(a=>`
+    <div class="alerta-prazo ${a.cls}" onclick="abrirDetalhe('${a.id}')">
+      <div class="alerta-icon">${a.icon}</div>
+      <div class="alerta-corpo"><div class="alerta-titulo">${a.titulo}</div><div class="alerta-sub">${a.sub}${a.label?' — '+a.label:''}</div></div>
+      <div style="font-size:11px;opacity:.7;flex-shrink:0;align-self:center;">clique para abrir →</div>
+    </div>`).join('');
+}
+
+function filtrar(){
+  const busca=document.getElementById('busca-texto').value.toLowerCase();
+  const fs=document.getElementById('f-status-filtro').value;
+  const fo=document.getElementById('f-origem-filtro').value;
+  const fu=document.getElementById('f-unidade-filtro').value;
+  const fp=document.getElementById('f-prazo-filtro').value;
+  let lista=oficios.filter(o=>{
+    const txt=(o.num+o.destinatario_nome+o.assunto+o.num_externo+o.destinatario_cargo+'').toLowerCase();
+    if(busca&&!txt.includes(busca))return false;
+    if(fs&&o.status!==fs)return false;
+    if(fo&&o.remetente!==fo)return false;
+    if(fu&&o.destinatario_cargo!==fu)return false;
+    if(fp){
+      if(o.status==='atendido')return false;
+      const d=diasRestantes(o.prazo_vencimento?.split('T')[0]);
+      if(fp==='vencido'&&d>=0)return false;
+      if(fp==='hoje'&&d!==0)return false;
+      if(fp==='proximos'&&(d<0||d>5))return false;
+    }
+    return true;
+  });
+  document.getElementById('lista-info').textContent=`${lista.length} ofício(s) encontrado(s)`;
+  if(!lista.length){document.getElementById('tabela-corpo').innerHTML='<tr><td colspan="10" class="vazio">Nenhum ofício encontrado.</td></tr>';return;}
+  const unidadeNome=id=>UNIDADES.find(u=>u.id===id)?.nome||id||'—';
+  document.getElementById('tabela-corpo').innerHTML=lista.map(o=>{
+    const prazoStr=o.prazo_vencimento?.split('T')[0];
+    const d=diasRestantes(prazoStr);
+    let diasHtml='';
+    if(o.status==='atendido')diasHtml='<span class="dias-label" style="color:#aaa;">—</span>';
+    else if(d<0)diasHtml=`<span class="dias-label dias-neg">${Math.abs(d)}d atraso</span>`;
+    else if(d===0)diasHtml='<span class="dias-label dias-zero">hoje</span>';
+    else if(d===1)diasHtml='<span class="dias-label dias-zero">amanhã</span>';
+    else diasHtml=`<span class="dias-label dias-pos">${d}d</span>`;
+    let prazoBadge='';
+    if(o.status==='atendido')prazoBadge=`<span style="font-size:12px;color:#aaa;">${fmtDate(prazoStr)}</span>`;
+    else if(d<0)prazoBadge=`<span class="badge-status bs-vencido">${fmtDate(prazoStr)}</span>`;
+    else if(d<=1)prazoBadge=`<span class="badge-status bs-pendente">${fmtDate(prazoStr)}</span>`;
+    else prazoBadge=`<span class="badge-status bs-atendido">${fmtDate(prazoStr)}</span>`;
+    let stBadge='';
+    if(o.status==='pendente')stBadge='<span class="badge-status bs-pendente">Pendente</span>';
+    else if(o.status==='respondido')stBadge='<span class="badge-status bs-respondido">Respondido</span>';
+    else stBadge='<span class="badge-status bs-atendido">Atendido</span>';
+    const unNome=unidadeNome(o.destinatario_cargo);
+    const assuntoCurto=(o.assunto||'—').length>50?(o.assunto||'').substring(0,50)+'…':o.assunto||'—';
+    return `<tr onclick="abrirDetalhe('${o.id}')">
+      <td class="proc-num">${o.num||'—'}</td>
+      <td style="font-size:13px;">${o.destinatario_nome||'—'}</td>
+      <td style="font-size:12px;color:#555;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${unNome}">${unNome}</td>
+      <td><span class="badge-status bs-respondido">${o.remetente||'—'}</span></td>
+      <td style="font-size:12px;color:#555;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${o.assunto||''}">${assuntoCurto}</td>
+      <td style="font-size:12px;color:#888;white-space:nowrap;">${fmtDate(o.data?.split('T')[0])}</td>
+      <td>${prazoBadge}</td>
+      <td>${diasHtml}</td>
+      <td>${stBadge}</td>
+      <td><button class="btn btn-sm btn-primary" onclick="event.stopPropagation();abrirDetalhe('${o.id}')">Abrir</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// AUTOCOMPLETE
+// ═══════════════════════════════════════════
+function acBuscar(val){
+  const list=document.getElementById('ac-list');
+  if(!val||val.length<2){list.style.display='none';acResultados=[];return;}
+  const q=val.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  acResultados=DELEGADOS.filter(d=>d.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(q));
+  if(!acResultados.length){list.style.display='none';return;}
+  list.innerHTML=acResultados.map((d,i)=>{const u=UNIDADES.find(x=>x.id===d.unidade);return`<div class="ac-item" onmousedown="acSelecionar(${i})"><div class="ac-name">${d.nome}</div><div class="ac-unit">${u?u.nome:''} · ${d.cargo}</div><div class="ac-phone">${d.telefone}</div></div>`;}).join('');
+  list.style.display='block';acFocused=-1;
+}
+function acSelecionar(i){
+  const d=acResultados[i];if(!d)return;
+  document.getElementById('f-delegado').value=d.nome;
+  document.getElementById('f-contato').value=d.telefone;
+  document.getElementById('f-unidade-form').value=d.unidade;
+  const u=UNIDADES.find(x=>x.id===d.unidade);
+  if(u)document.getElementById('f-email-unidade').value=u.email;
+  document.getElementById('ac-list').style.display='none';acResultados=[];
+}
+function acKeydown(e){
+  const items=document.querySelectorAll('.ac-item');
+  if(e.key==='ArrowDown'){e.preventDefault();acFocused=Math.min(acFocused+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('focused',i===acFocused));}
+  else if(e.key==='ArrowUp'){e.preventDefault();acFocused=Math.max(acFocused-1,0);items.forEach((el,i)=>el.classList.toggle('focused',i===acFocused));}
+  else if(e.key==='Enter'&&acFocused>=0){e.preventDefault();acSelecionar(acFocused);}
+  else if(e.key==='Escape'){document.getElementById('ac-list').style.display='none';}
+}
+document.addEventListener('click',e=>{if(!e.target.closest('.autocomplete-wrap'))document.getElementById('ac-list').style.display='none';});
+
+// ═══════════════════════════════════════════
+// MODAL NOVO/EDITAR
+// ═══════════════════════════════════════════
+function setPrazo(dias,el){
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('sel'));
+  el.classList.add('sel');
+  if(dias===0){document.getElementById('f-prazo').value='';return;}
+  const d=new Date(hoje);d.setDate(d.getDate()+dias);
+  document.getElementById('f-prazo').value=d.toISOString().split('T')[0];
+}
+
+function abrirModal(id){
+  editId=id||null;
+  const o=id?oficios.find(x=>x.id===id):null;
+  document.getElementById('modal-novo-titulo').textContent=o?'Editar ofício':'Novo ofício';
+  document.getElementById('f-num').value=o?.num||'';
+  document.getElementById('f-envio').value=o?.data?.split('T')[0]||hoje.toISOString().split('T')[0];
+  document.getElementById('f-delegado').value=o?.destinatario_nome||'';
+  document.getElementById('f-unidade-form').value=o?.destinatario_cargo||'';
+  const del=DELEGADOS.find(d=>d.nome===o?.destinatario_nome);
+  document.getElementById('f-contato').value=del?.telefone||o?.destinatario_matricula||'';
+  const unid=UNIDADES.find(u=>u.id===o?.destinatario_cargo);
+  document.getElementById('f-email-unidade').value=unid?.email||o?.remetente_matricula||'';
+  document.getElementById('f-origem-f').value=o?.remetente||'MP';
+  document.getElementById('f-ref').value=o?.num_externo||'';
+  document.getElementById('f-assunto').value=o?.assunto||'';
+  document.getElementById('f-prazo').value=o?.prazo_vencimento?.split('T')[0]||'';
+  const canal=(o?.historico||[]).find(h=>h.tipo==='canais');
+  document.getElementById('f-pae').value=canal?.pae||'sim';
+  document.getElementById('f-wpp').value=canal?.wpp||'sim';
+  document.getElementById('f-obs').value=o?.obs||'';
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('sel'));
+  document.getElementById('modal-novo').classList.add('open');
+}
+
+async function salvar(){
+  const num=document.getElementById('f-num').value.trim();
+  const delegado=document.getElementById('f-delegado').value.trim();
+  const unidadeId=document.getElementById('f-unidade-form').value;
+  const prazo=document.getElementById('f-prazo').value;
+  const envio=document.getElementById('f-envio').value;
+  if(!num||!delegado||!unidadeId||!prazo||!envio){alert('Preencha os campos obrigatórios: nº, delegado, unidade, data e prazo.');return;}
+  const btn=document.getElementById('btn-salvar');
+  btn.innerHTML='<span class="spinner"></span> Salvando...';btn.disabled=true;
+  const pae=document.getElementById('f-pae').value;
+  const wpp=document.getElementById('f-wpp').value;
+  const contato=document.getElementById('f-contato').value.trim();
+  const emailUnidade=document.getElementById('f-email-unidade').value.trim();
+  const agora=new Date().toISOString();
+  let historico=[];
+  if(editId){const old=oficios.find(x=>x.id===editId);historico=(old?.historico||[]).filter(h=>h.tipo!=='canais');}
+  historico.push({tipo:'canais',pae,wpp,data:agora,usuario:usuarioLogado?.nome});
+  if(!editId)historico.push({tipo:'criacao',acao:'Criado',data:agora,usuario:usuarioLogado?.nome});
+  const d=diasRestantes(prazo);
+  const payload={num,tipo:TIPO,destinatario_nome:delegado,destinatario_cargo:unidadeId,destinatario_matricula:contato,remetente:document.getElementById('f-origem-f').value,remetente_matricula:emailUnidade,assunto:document.getElementById('f-assunto').value.trim(),num_externo:document.getElementById('f-ref').value.trim(),obs:document.getElementById('f-obs').value.trim(),data:envio+'T00:00:00',prazo_vencimento:prazo+'T00:00:00',prazo_dias:d,prazo_vencido:d<0,status:editId?(oficios.find(x=>x.id===editId)?.status||'pendente'):'pendente',setor:'CGPC',sigilo:'normal',lido:true,respondido:false,historico};
+  try{
+    if(editId)await sbFetch(`/rest/v1/documentos?id=eq.${editId}`,{method:'PATCH',body:JSON.stringify(payload)});
+    else await sbFetch('/rest/v1/documentos',{method:'POST',body:JSON.stringify(payload)});
+    await auditoria(editId?'editar_oficio':'criar_oficio',`Ofício ${num} — ${delegado}`);
+    toast('✔ Ofício salvo com sucesso!');
+    fecharModal('modal-novo');
+    await carregarOficios();
+  }catch(e){alert('Erro ao salvar: '+e.message);}
+  btn.innerHTML='Salvar ofício';btn.disabled=false;
+}
+
+// ═══════════════════════════════════════════
+// DETALHE
+// ═══════════════════════════════════════════
+function abrirDetalhe(id){
+  detailId=id;
+  const o=oficios.find(x=>x.id===id);if(!o)return;
+  const prazoStr=o.prazo_vencimento?.split('T')[0];
+  const d=diasRestantes(prazoStr);
+  document.getElementById('d-num').textContent=o.num||'—';
+  let meta='';
+  if(o.status==='atendido')meta='Atendido / concluído';
+  else if(d<0)meta=`⚠ Vencido há ${Math.abs(d)} dia(s)`;
+  else if(d===0)meta='🔴 Vence hoje!';
+  else if(d===1)meta='🟡 Vence amanhã';
+  else meta=`${d} dia(s) restantes`;
+  document.getElementById('d-meta').textContent=meta;
+  document.getElementById('d-delegado').textContent=o.destinatario_nome||'—';
+  document.getElementById('d-contato').textContent=o.destinatario_matricula||'';
+  const unid=UNIDADES.find(u=>u.id===o.destinatario_cargo);
+  document.getElementById('d-unidade').textContent=unid?unid.nome:(o.destinatario_cargo||'—');
+  document.getElementById('d-email-unidade').textContent=o.remetente_matricula||unid?.email||'';
+  document.getElementById('d-origem').textContent=o.remetente||'—';
+  document.getElementById('d-ref').textContent=o.num_externo||'—';
+  document.getElementById('d-envio').textContent=fmtDate(o.data?.split('T')[0]);
+  document.getElementById('d-prazo').textContent=fmtDate(prazoStr);
+  const canal=(o.historico||[]).find(h=>h.tipo==='canais');
+  let canaisHtml='';
+  if(canal?.pae==='sim')canaisHtml+='<span class="canal-tag canal-pae">PAE</span>';
+  if(canal?.wpp==='sim')canaisHtml+='<span class="canal-tag canal-wpp">WhatsApp</span>';
+  document.getElementById('d-canais').innerHTML=canaisHtml||'—';
+  document.getElementById('d-assunto').textContent=o.assunto||'—';
+  const obsEl=document.getElementById('d-obs');
+  if(o.obs){obsEl.textContent='Obs: '+o.obs;obsEl.style.display='block';}else{obsEl.style.display='none';}
+  const sb2=document.getElementById('d-status-btns');sb2.innerHTML='';
+  [{v:'pendente',l:'Pendente'},{v:'respondido',l:'Respondido'},{v:'atendido',l:'Atendido'}].forEach(({v,l})=>{
+    const b=document.createElement('button');
+    b.className='btn'+(o.status===v?' btn-primary':'');
+    b.textContent=l;b.onclick=()=>setStatus(v);sb2.appendChild(b);
+  });
+  const hist=(o.historico||[]).filter(h=>h.tipo!=='canais').reverse();
+  const histEl=document.getElementById('d-hist');
+  histEl.innerHTML=hist.length?`<div style="border-left:2px solid #d0d0c8;padding-left:12px;">${hist.map(h=>`<div class="hist-item"><div style="font-size:10px;color:#888;">${new Date(h.data).toLocaleString('pt-BR')}</div><div style="font-size:13px;"><strong>${h.acao||h.tipo}</strong>${h.usuario?' — '+h.usuario:''}${h.motivo?' — '+h.motivo:''}</div></div>`).join('')}</div>`:'<div style="font-size:12px;color:#aaa;padding:8px 0;">Sem registros.</div>';
+  document.getElementById('d-nova-data').value='';
+  document.getElementById('d-prorrog-motivo').value='';
+  document.getElementById('modal-detalhe').classList.add('open');
+}
+
+async function setStatus(s){
+  const o=oficios.find(x=>x.id===detailId);if(!o)return;
+  const hist=o.historico||[];
+  hist.push({tipo:'status',acao:`Status: ${s}`,data:new Date().toISOString(),usuario:usuarioLogado?.nome});
+  await sbFetch(`/rest/v1/documentos?id=eq.${detailId}`,{method:'PATCH',body:JSON.stringify({status:s,respondido:s==='respondido'||s==='atendido',historico:hist})});
+  await auditoria('atualizar_status',`${o.num} → ${s}`);
+  toast('✔ Status atualizado!');
+  fecharModal('modal-detalhe');
+  await carregarOficios();
+}
+
+async function prorrogar(){
+  const novaData=document.getElementById('d-nova-data').value;
+  const motivo=document.getElementById('d-prorrog-motivo').value.trim();
+  if(!novaData){alert('Informe a nova data.');return;}
+  const o=oficios.find(x=>x.id===detailId);
+  const hist=o.historico||[];
+  hist.push({tipo:'prorrogacao',acao:`Prazo prorrogado para ${fmtDate(novaData)}`,motivo,data:new Date().toISOString(),usuario:usuarioLogado?.nome});
+  const d=diasRestantes(novaData);
+  await sbFetch(`/rest/v1/documentos?id=eq.${detailId}`,{method:'PATCH',body:JSON.stringify({prazo_vencimento:novaData+'T00:00:00',prazo_dias:d,prazo_vencido:d<0,prorrogacao:motivo,historico:hist})});
+  await auditoria('prorrogar_oficio',`${o.num} → novo prazo: ${novaData}`);
+  toast('✔ Prazo prorrogado!');
+  fecharModal('modal-detalhe');
+  await carregarOficios();
+}
+
+async function excluir(){
+  const o=oficios.find(x=>x.id===detailId);
+  if(!confirm(`Excluir o ofício ${o?.num}? Esta ação não pode ser desfeita.`))return;
+  await sbFetch(`/rest/v1/documentos?id=eq.${detailId}`,{method:'DELETE'});
+  await auditoria('excluir_oficio',`Excluído: ${o?.num}`);
+  toast('Ofício excluído.');
+  fecharModal('modal-detalhe');
+  await carregarOficios();
+}
+
+function editarAtual(){fecharModal('modal-detalhe');abrirModal(detailId);}
+
+function fecharModal(id,e){
+  if(e&&e.target!==document.getElementById(id))return;
+  document.getElementById(id).classList.remove('open');
+  if(id==='modal-detalhe')detailId=null;
+  if(id==='modal-novo')editId=null;
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){fecharModal('modal-novo');fecharModal('modal-detalhe');}});
+</script>
+</body>
+</html>
