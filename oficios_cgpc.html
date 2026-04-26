@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CGPC — Controle de Ofícios e Prazos — 10ª RISP</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a;background:#f0f2f5;}
+
+/* ── LOGIN ── */
+#tela-login{position:fixed;inset:0;background:linear-gradient(160deg,#071525 0%,#0d2545 55%,#122d55 100%);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;background-image:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,.03) 39px,rgba(255,255,255,.03) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,.03) 39px,rgba(255,255,255,.03) 40px);}
+.login-card{background:#fff;border-radius:16px;padding:38px 34px;width:100%;max-width:370px;box-shadow:0 16px 60px rgba(0,0,0,.5);}
+.login-title{font-size:17px;font-weight:700;text-align:center;color:#0d2545;margin-bottom:4px;}
+.login-sub{font-size:12px;color:#888;text-align:center;margin-bottom:20px;line-height:1.6;}
+.login-field{margin-bottom:12px;}
+.login-field label{font-size:12px;color:#666;display:block;margin-bottom:4px;}
+.login-field input{width:100%;padding:10px 12px;border:1px solid #d0d0c8;border-radius:8px;font-size:14px;outline:none;}
+.login-field input:focus{border-color:#1a3a6b;box-shadow:0 0 0 2px rgba(26,58,107,.1);}
+.login-btn{width:100%;padding:12px;background:#1a3a6b;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;margin-top:6px;}
+.login-btn:hover{background:#152f58;}
+.login-erro{display:none;background:rgba(220,50,50,.15);color:#c03030;font-size:12px;text-align:center;padding:8px;border-radius:6px;margin-bottom:10px;border:1px solid rgba(220,50,50,.25);}
+.login-rodape{font-size:11px;color:#aaa;text-align:center;margin-top:16px;line-height:1.5;}
+
+/* ── HEADER ── */
+.header{background:#fff;border-bottom:1px solid #e0e0d8;padding:10px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.badge-cgpc{background:linear-gradient(135deg,#0d2545,#1a3a6b);color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:6px;letter-spacing:.5px;box-shadow:0 2px 6px rgba(13,37,69,.4);flex-shrink:0;}
+.header-title{flex:1;font-size:14px;font-weight:500;color:#1a1a1a;}
+.avatar{width:30px;height:30px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0C447C;flex-shrink:0;}
+.db-dot{width:7px;height:7px;border-radius:50%;background:#ccc;display:inline-block;}
+.db-dot.ok{background:#639922;}.db-dot.err{background:#E24B4A;}
+
+/* ── TABS ── */
+.tabs{display:flex;background:#fff;border-bottom:1px solid #e0e0d8;padding:0 20px;gap:0;overflow-x:auto;}
+.tab{padding:10px 16px;font-size:13px;cursor:pointer;border-bottom:3px solid transparent;color:#666;white-space:nowrap;user-select:none;display:flex;align-items:center;gap:6px;}
+.tab:hover{color:#1a1a1a;background:#f8f8f4;}
+.tab.active{color:#1a3a6b;border-bottom-color:#1a3a6b;font-weight:600;}
+
+/* ── LAYOUT ── */
+.content{padding:20px;display:none;max-width:1200px;margin:0 auto;}
+.content.active{display:block;}
+.section-card{background:#fff;border:1px solid #e0e0d8;border-radius:10px;padding:16px 18px;margin-bottom:14px;}
+.section-title{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;}
+
+/* ── MÉTRICAS ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;}
+.kpi-card{background:#fff;border:1px solid #e0e0d8;border-radius:10px;padding:14px 12px;text-align:center;}
+.kpi-val{font-size:28px;font-weight:800;line-height:1;}
+.kpi-label{font-size:11px;color:#888;margin-top:4px;}
+
+/* ── FORM ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+@media(max-width:700px){.grid2,.grid3{grid-template-columns:1fr;}}
+label{font-size:12px;color:#555;display:block;margin-bottom:4px;font-weight:500;}
+input,select,textarea{width:100%;font-size:13px;padding:8px 10px;border:1px solid #d0d0c8;border-radius:6px;background:#fff;color:#1a1a1a;outline:none;}
+input:focus,select:focus,textarea:focus{border-color:#1a3a6b;box-shadow:0 0 0 2px rgba(26,58,107,.1);}
+textarea{resize:vertical;min-height:72px;}
+
+/* ── BOTÕES ── */
+.btn{padding:7px 14px;border:1px solid #d0d0c8;border-radius:6px;background:#fff;color:#1a1a1a;cursor:pointer;font-size:13px;transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+.btn:hover{background:#f0f0e8;}
+.btn.btn-primary{background:#1a3a6b;color:#fff;border-color:#1a3a6b;}
+.btn.btn-primary:hover{background:#152f58;}
+.btn.btn-primary:disabled{background:#8aa0be;cursor:not-allowed;}
+.btn.btn-danger{background:#FCEBEB;color:#791F1F;border-color:#F09595;}
+.btn.btn-danger:hover{background:#f8d8d8;}
+.btn.btn-sm{padding:4px 10px;font-size:12px;}
+.btn.btn-success{background:#EAF3DE;color:#27500A;border-color:#97C459;}
+
+/* ── BADGES ── */
+.badge-status{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+.bs-pendente{background:#FAEEDA;color:#633806;}
+.bs-respondido{background:#E6F1FB;color:#0C447C;}
+.bs-atendido{background:#EAF3DE;color:#27500A;}
+.bs-vencido{background:#FCEBEB;color:#791F1F;}
+.bs-origem{background:#E6F1FB;color:#0C447C;}
+
+/* ── TABELA ── */
+.tabela-wrap{overflow-x:auto;border-radius:8px;border:1px solid #e0e0d8;}
+table.proc-table{width:100%;border-collapse:collapse;font-size:13px;}
+table.proc-table thead tr{background:#f5f5f0;}
+table.proc-table th{padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #e0e0d8;white-space:nowrap;}
+table.proc-table td{padding:10px 12px;border-bottom:1px solid #f0f0e8;vertical-align:middle;}
+table.proc-table tr:last-child td{border-bottom:none;}
+table.proc-table tbody tr:hover{background:#f8f9ff;cursor:pointer;}
+.proc-num{font-family:monospace;font-size:12px;font-weight:700;color:#1a3a6b;}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:#fff;border-radius:14px;width:100%;max-width:620px;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:modalIn .18s ease;margin:auto;}
+@keyframes modalIn{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-header{padding:16px 20px;border-bottom:1px solid #e0e0d8;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:2;border-radius:14px 14px 0 0;}
+.modal-header h2{font-size:15px;font-weight:700;color:#0d2545;}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#888;line-height:1;padding:4px 8px;border-radius:4px;}
+.modal-close:hover{background:#f0f0e8;}
+.modal-body{padding:20px;max-height:80vh;overflow-y:auto;}
+.modal-section{margin-bottom:18px;}
+.modal-section-title{font-size:11px;font-weight:700;color:#1a3a6b;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e8f0fb;}
+
+/* ── AUTOCOMPLETE ── */
+.autocomplete-wrap{position:relative;}
+.ac-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #d0d0c8;border-top:none;border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;z-index:500;box-shadow:0 4px 12px rgba(0,0,0,.12);}
+.ac-item{padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0e8;}
+.ac-item:last-child{border-bottom:none;}
+.ac-item:hover,.ac-item.focused{background:#f0f6ff;}
+.ac-item .ac-name{font-weight:600;color:#0d2545;}
+.ac-item .ac-unit{font-size:11px;color:#888;margin-top:1px;}
+.ac-item .ac-phone{font-size:11px;color:#1a3a6b;font-family:monospace;}
+
+/* ── PRAZOS PILLS ── */
+.prazo-pills{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px;}
+.pill{padding:5px 14px;border:1px solid #d0d0c8;border-radius:20px;font-size:12px;cursor:pointer;transition:all .15s;background:#fff;color:#555;font-family:monospace;}
+.pill:hover,.pill.sel{background:#1a3a6b;color:#fff;border-color:#1a3a6b;}
+
+/* ── ALERTAS ── */
+.alerta-prazo{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:8px;margin-bottom:6px;cursor:pointer;transition:filter .15s;}
+.alerta-prazo:hover{filter:brightness(.96);}
+.alerta-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.alerta-corpo{flex:1;}
+.alerta-titulo{font-size:13px;font-weight:700;}
+.alerta-sub{font-size:11px;margin-top:2px;opacity:.85;}
+.alerta-vencido{background:#FCEBEB;border:1px solid #F09595;color:#791F1F;}
+.alerta-hoje{background:#FAEEDA;border:1px solid #EF9F27;color:#633806;}
+
+/* ── FILTROS BAR ── */
+.filtros-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;}
+.filtros-bar .field{margin-bottom:0;min-width:140px;}
+.search-input{flex:1;min-width:200px;}
+
+/* ── MISC ── */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(26,58,107,.2);border-top-color:#1a3a6b;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:24px;right:24px;background:#1a3a6b;color:#fff;padding:11px 20px;border-radius:8px;font-size:13px;display:none;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25);}
+.vazio{color:#aaa;font-size:13px;text-align:center;padding:40px 20px;}
+.row-btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid #e0e0d8;}
+.hist-item{padding:7px 0;border-bottom:1px solid #f0f0e8;font-size:12px;}
+.hist-item:last-child{border-bottom:none;}
+.canal-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;margin-right:4px;font-weight:600;}
+.canal-pae{background:#E6F1FB;color:#0C447C;}
+.canal-wpp{background:#EAF3DE;color:#27500A;}
+.dias-label{font-family:monospace;font-size:12px;font-weight:700;}
+.dias-neg{color:#791F1F;}.dias-zero{color:#633806;}.dias-pos{color:#27500A;}
+.field-mb{margin-bottom:12px;}
+.info-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600;background:#f0f0e8;color:#555;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════ LOGIN ═══════════ -->
+<div id="tela-login">
+  <div class="login-card">
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="width:68px;height:68px;background:linear-gradient(135deg,#0d2545,#1a3a6b);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;box-shadow:0 4px 16px rgba(13,37,69,.4);">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+    </div>
+    <div class="login-title">CGPC — Ofícios</div>
+    <div class="login-sub">Controle de Ofícios e Prazos<br>Corregedoria Regional — 10ª RISP</div>
+    <hr style="border:none;border-top:1px solid #e0e0d8;margin:16px 0;">
+    <div class="login-erro" id="login-erro">Usuário ou senha incorretos.</div>
+    <div class="login-field"><label>Usuário</label><input type="text" id="login-usuario" placeholder="Seu primeiro nome" autocomplete="off"></div>
+    <div class="login-field"><label>Senha</label><input type="password" id="login-senha" placeholder="Sua matrícula funcional"></div>
+    <button class="login-btn" onclick="fazerLogin()">Entrar</button>
+    <div class="login-rodape">Polícia Civil do Estado do Pará — CGPC<br>Acesso restrito a servidores autorizados</div>
+  </div>
+</div>
+
+<!-- ═══════════ SISTEMA ═══════════ -->
+<div id="sistema" style="display:none;">
+
+  <div class="header">
+    <div class="badge-cgpc">CGPC</div>
+    <div class="header-title">Controle de Ofícios e Prazos — 10ª RISP</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:#888;">
+        <div class="db-dot" id="db-dot"></div>
+        <span id="db-txt">Conectando...</span>
+      </div>
+      <div class="avatar" id="h-avatar"></div>
+      <span style="font-size:12px;font-weight:600;color:#333;flex-shrink:0;white-space:nowrap;" id="h-nome"></span>
+      <button onclick="fazerLogout()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border:none;border-radius:6px;background:#FCEBEB;color:#791F1F;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sair
+      </button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" id="tab-btn-dashboard" onclick="trocarAba('dashboard',this)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Início
+    </div>
+    <div class="tab" id="tab-btn-novo" onclick="trocarAba('novo',this)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      Novo Ofício
+    </div>
+    <div class="tab" id="tab-btn-lista" onclick="trocarAba('lista',this)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Ofícios
+    </div>
+    <div class="tab" id="tab-btn-relatorios" onclick="trocarAba('relatorios',this)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Relatórios
+    </div>
+  </div>
+
+  <!-- ABA INÍCIO -->
+  <div class="content active" id="tab-dashboard">
+
+    <div style="background:linear-gradient(135deg,#0d2545,#1a3a6b);border-radius:12px;padding:16px 22px;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+      <div>
+        <div style="font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:1px;">CGPC — Corregedoria Regional</div>
+        <div style="font-size:20px;font-weight:800;margin-top:2px;" id="dash-nome"></div>
+        <div style="font-size:12px;opacity:.8;" id="dash-cargo"></div>
+      </div>
+      <div style="text-align:right;font-size:12px;opacity:.8;" id="dash-data"></div>
+    </div>
+
+    <div class="kpi-grid" id="kpis"></div>
+
+    <div id="painel-alertas" style="display:none;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;color:#791F1F;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Alertas de Prazo
+      </div>
+      <div id="lista-alertas"></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">Ofícios ativos — mais urgentes primeiro</div>
+      <div id="dash-lista"><div class="vazio"><span class="spinner"></span> Carregando...</div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid #f0f0e8;margin-top:8px;">
+        <button class="btn btn-sm" id="dash-btn-ant" onclick="dashPag(-1)" disabled>← Anterior</button>
+        <span style="font-size:12px;color:#888;" id="dash-pag-info"></span>
+        <button class="btn btn-sm" id="dash-btn-prox" onclick="dashPag(1)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA NOVO OFÍCIO -->
+  <div class="content" id="tab-novo">
+    <div class="section-card" style="max-height:calc(100vh - 110px);overflow-y:auto;">
+      <div class="section-title">Cadastro de Novo Ofício</div>
+
+      <div class="grid2 field-mb" style="gap:12px;">
+        <div>
+          <label>Tipo de documento *</label>
+          <select id="f-tipo-doc" onchange="tipoDocChange(this.value)">
+            <option value="">— selecione —</option>
+            <option value="oficio" selected>Ofício</option>
+            <option value="pae">PAE</option>
+          </select>
+        </div>
+        <div><label id="f-num-label">Nº do documento *</label><input id="f-num" type="text" placeholder="Selecione o tipo primeiro"></div>
+      </div>
+
+      <div class="grid2 field-mb" style="gap:12px;">
+        <div><label>Data de envio *</label><input id="f-envio" type="date"></div>
+        <div id="campo-ref"><label>Referência adicional</label><input id="f-ref" type="text" placeholder="Nº de outro documento de referência"></div>
+      </div>
+
+      <div class="field-mb">
+        <label>Assunto / diligência solicitada *</label>
+        <textarea id="f-assunto" placeholder="Descreva a diligência solicitada..."></textarea>
+      </div>
+
+      <div class="field-mb">
+        <label>Delegado *</label>
+        <select id="f-delegado" onchange="selecionarDelegado(this.value)">
+          <option value="">— selecione o delegado —</option>
+          <optgroup label="10ª RISP — Sede Marabá">
+            <option value="Vinícius Cardoso Neves">Vinícius Cardoso Neves — Superintendente</option>
+            <option value="Eliene Carla de Lima">Eliene Carla de Lima — Assistente DPC</option>
+          </optgroup>
+          <optgroup label="21ª Seccional de Marabá">
+            <option value="Antonio Mororo Junior">Antonio Mororo Junior — Diretor</option>
+            <option value="Bruno Martins Mesquita">Bruno Martins Mesquita</option>
+            <option value="Pedro Marinho de Souza">Pedro Marinho de Souza</option>
+            <option value="Luiz Otavio Ernesto de Barros">Luiz Otavio Ernesto de Barros</option>
+            <option value="William Lopes Crispim">William Lopes Crispim</option>
+            <option value="Lucas Assis Nunes">Lucas Assis Nunes</option>
+            <option value="Washington Santos de Oliveira">Washington Santos de Oliveira</option>
+            <option value="Rodrigo Gonçalves Graças">Rodrigo Gonçalves Graças</option>
+          </optgroup>
+          <optgroup label="UISP São Félix">
+            <option value="Djalma Antonio Paula dos Santos">Djalma Antonio Paula dos Santos</option>
+          </optgroup>
+          <optgroup label="Unidade Cidade Nova">
+            <option value="Elcio Fideles de Deus">Elcio Fideles de Deus</option>
+            <option value="Gabriel Angelo de Oliveira Santos">Gabriel Angelo de Oliveira Santos</option>
+          </optgroup>
+          <optgroup label="Delegacia de Homicídios — Marabá">
+            <option value="Vítor Luiz Gonçalves Rocha da Costa">Vítor Luiz Gonçalves Rocha da Costa</option>
+            <option value="Simone Felinto França">Simone Felinto França</option>
+            <option value="Leandro da Conceição Benício">Leandro da Conceição Benício</option>
+          </optgroup>
+          <optgroup label="DEAM Marabá">
+            <option value="Bianca Maria Leão dos Santos Vieira">Bianca Maria Leão dos Santos Vieira — Titular</option>
+            <option value="Allana Christhy Fernandes Araujo">Allana Christhy Fernandes Araujo</option>
+            <option value="Luciana Costa de Menezes">Luciana Costa de Menezes</option>
+            <option value="Yasmin Santos Andrade Faria">Yasmin Santos Andrade Faria</option>
+            <option value="Laiz Ruiz de Souza">Laiz Ruiz de Souza</option>
+          </optgroup>
+          <optgroup label="DEACA Marabá">
+            <option value="Lívia Rodrigues Queiroz Ferraz">Lívia Rodrigues Queiroz Ferraz</option>
+          </optgroup>
+          <optgroup label="DECA Marabá">
+            <option value="Vannir Wagner Fernandes Sousa">Vannir Wagner Fernandes Sousa</option>
+          </optgroup>
+          <optgroup label="Abel Figueiredo">
+            <option value="Jose Lenio Ferreira Duarte">Jose Lenio Ferreira Duarte</option>
+          </optgroup>
+          <optgroup label="Bom Jesus do Tocantins">
+            <option value="Eric de Lima Santos">Eric de Lima Santos</option>
+          </optgroup>
+          <optgroup label="Brejo Grande do Araguaia">
+            <option value="Igor Wanick Mattos Guimarães">Igor Wanick Mattos Guimarães</option>
+          </optgroup>
+          <optgroup label="Itupiranga">
+            <option value="Timoteo de Oliveira Soares">Timoteo de Oliveira Soares</option>
+            <option value="Leandro Pontes Oliveira">Leandro Pontes Oliveira</option>
+          </optgroup>
+          <optgroup label="Nova Ipixuna">
+            <option value="Celso Menditti Lima">Celso Menditti Lima</option>
+          </optgroup>
+          <optgroup label="Palestina do Pará">
+            <option value="Jailson Lucena da Silva">Jailson Lucena da Silva</option>
+          </optgroup>
+          <optgroup label="Piçarra">
+            <option value="Rodolfo Carvalho Rocha">Rodolfo Carvalho Rocha</option>
+          </optgroup>
+          <optgroup label="Rondon do Pará">
+            <option value="Wellton dos Santos Fernandes">Wellton dos Santos Fernandes</option>
+            <option value="Thiago Santos da Silva">Thiago Santos da Silva</option>
+          </optgroup>
+          <optgroup label="São Domingos do Araguaia">
+            <option value="Walter Ruiz Bogaz Neto">Walter Ruiz Bogaz Neto</option>
+            <option value="Daniel Albrecht Ferreira">Daniel Albrecht Ferreira</option>
+          </optgroup>
+          <optgroup label="São Geraldo do Araguaia">
+            <option value="Edesio Ribeiro dos Santos">Edesio Ribeiro dos Santos</option>
+          </optgroup>
+          <optgroup label="São João do Araguaia">
+            <option value="Toni Rinaldo Rodrigues de Vargas">Toni Rinaldo Rodrigues de Vargas</option>
+          </optgroup>
+          <optgroup label="── 16ª RISP ──" disabled style="color:#1a3a6b;font-weight:700;"></optgroup>
+          <optgroup label="16ª RISP — Superintendência Regional de Carajás">
+            <option value="Joao Abel Barbosa de Mattos">Joao Abel Barbosa de Mattos — Superintendente Regional</option>
+          </optgroup>
+          <optgroup label="20ª Seccional Urbana — Parauapebas">
+            <option value="Luciano Ramos de Oliveira">Luciano Ramos de Oliveira — Diretor</option>
+            <option value="Diego Maximo do Prado">Diego Maximo do Prado</option>
+            <option value="Dufrae Abade Paiva">Dufrae Abade Paiva</option>
+            <option value="Fernando Barbosa Marins">Fernando Barbosa Marins</option>
+            <option value="Gabriel Henrique Alves Costa">Gabriel Henrique Alves Costa</option>
+            <option value="Jorge Gilson Ishibashi Carneiro">Jorge Gilson Ishibashi Carneiro</option>
+            <option value="Kari Grazielle Klat">Kari Grazielle Klat</option>
+            <option value="Melquesedeque da Silva Ribeiro">Melquesedeque da Silva Ribeiro</option>
+            <option value="Nelson Alves Junior">Nelson Alves Junior</option>
+            <option value="Thiago Carneiro Rodrigues">Thiago Carneiro Rodrigues</option>
+          </optgroup>
+          <optgroup label="Delegacia de Homicídios — Parauapebas">
+            <option value="Felipe Oliveira Freitas">Felipe Oliveira Freitas</option>
+            <option value="Yanna Kaline Wanderley de Azevedo">Yanna Kaline Wanderley de Azevedo</option>
+          </optgroup>
+          <optgroup label="DEAM Parauapebas">
+            <option value="Jullya Gabryella Oliveira Santos">Jullya Gabryella Oliveira Santos — Titular</option>
+            <option value="Isabella de Luca Martines">Isabella de Luca Martines</option>
+            <option value="Thiany Souza Marins">Thiany Souza Marins</option>
+          </optgroup>
+          <optgroup label="DEACA Parauapebas">
+            <option value="Daniela Vieira Bezerra">Daniela Vieira Bezerra</option>
+            <option value="Leticia Suassuna de Morais Goncales">Leticia Suassuna de Morais Goncales</option>
+          </optgroup>
+          <optgroup label="Delegacia de Canaã dos Carajás">
+            <option value="Patricia Brandao de Mesquita">Patricia Brandao de Mesquita — Titular</option>
+            <option value="Luca Franca da Costa Soares">Luca Franca da Costa Soares</option>
+          </optgroup>
+          <optgroup label="DEAM Canaã dos Carajás">
+            <option value="Nathalia Alves da Silva Ferreira">Nathalia Alves da Silva Ferreira</option>
+          </optgroup>
+          <optgroup label="Delegacia de Eldorado dos Carajás">
+            <option value="Vannir Wagner Fernandes Sousa">Vannir Wagner Fernandes Sousa</option>
+          </optgroup>
+          <optgroup label="Delegacia de Curionópolis">
+            <option value="Jose Euclides Aquino da Silva">Jose Euclides Aquino da Silva</option>
+          </optgroup>
+          <optgroup label="── 16ª RISP ──" disabled></optgroup>
+          <optgroup label="16ª RISP — Superintendência de Carajás">
+            <option value="Joao Abel Barbosa de Mattos">Joao Abel Barbosa de Mattos — Superintendente</option>
+          </optgroup>
+          <optgroup label="20ª Seccional Urbana — Parauapebas">
+            <option value="Luciano Ramos de Oliveira">Luciano Ramos de Oliveira — Diretor</option>
+            <option value="Diego Maximo do Prado">Diego Maximo do Prado</option>
+            <option value="Dufrae Abade Paiva">Dufrae Abade Paiva</option>
+            <option value="Fernando Barbosa Marins">Fernando Barbosa Marins</option>
+            <option value="Gabriel Henrique Alves Costa">Gabriel Henrique Alves Costa</option>
+            <option value="Jorge Gilson Ishibashi Carneiro">Jorge Gilson Ishibashi Carneiro</option>
+            <option value="Kari Grazielle Klat">Kari Grazielle Klat</option>
+            <option value="Melquesedeque da Silva Ribeiro">Melquesedeque da Silva Ribeiro</option>
+            <option value="Nelson Alves Junior">Nelson Alves Junior</option>
+            <option value="Thiago Carneiro Rodrigues">Thiago Carneiro Rodrigues</option>
+          </optgroup>
+          <optgroup label="Delegacia de Homicídios — Parauapebas">
+            <option value="Felipe Oliveira Freitas">Felipe Oliveira Freitas</option>
+            <option value="Yanna Kaline Wanderley de Azevedo">Yanna Kaline Wanderley de Azevedo</option>
+          </optgroup>
+          <optgroup label="DEAM Parauapebas">
+            <option value="Jullya Gabryella Oliveira Santos">Jullya Gabryella Oliveira Santos — Titular</option>
+            <option value="Isabella de Luca Martines">Isabella de Luca Martines</option>
+            <option value="Thiany Souza Marins">Thiany Souza Marins</option>
+          </optgroup>
+          <optgroup label="DEACA Parauapebas">
+            <option value="Daniela Vieira Bezerra">Daniela Vieira Bezerra</option>
+            <option value="Leticia Suassuna de Morais Goncales">Leticia Suassuna de Morais Goncales</option>
+          </optgroup>
+          <optgroup label="Delegacia de Canaã dos Carajás">
+            <option value="Patricia Brandao de Mesquita">Patricia Brandao de Mesquita — Titular</option>
+            <option value="Luca Franca da Costa Soares">Luca Franca da Costa Soares</option>
+          </optgroup>
+          <optgroup label="DEAM Canaã dos Carajás">
+            <option value="Nathalia Alves da Silva Ferreira">Nathalia Alves da Silva Ferreira</option>
+          </optgroup>
+          <optgroup label="Delegacia de Eldorado dos Carajás">
+            <option value="Vannir Wagner Fernandes Sousa">Vannir Wagner Fernandes Sousa</option>
+          </optgroup>
+          <optgroup label="Delegacia de Curionópolis">
+            <option value="Jose Euclides Aquino da Silva">Jose Euclides Aquino da Silva</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="field-mb">
+        <label>Unidade / Delegacia *</label>
+        <select id="f-unidade-form"><option value="">— selecione a unidade —</option></select>
+      </div>
+
+      <div class="field-mb">
+        <label>Prazo *</label>
+        <div class="prazo-pills">
+          <span class="pill" onclick="setPrazo(2,this)">48h</span>
+          <span class="pill" onclick="setPrazo(5,this)">5 dias</span>
+          <span class="pill" onclick="setPrazo(10,this)">10 dias</span>
+          <span class="pill" onclick="setPrazo(15,this)">15 dias</span>
+          <span class="pill" onclick="setPrazo(30,this)">30 dias</span>
+          <span class="pill" onclick="setPrazo(90,this)">90 dias</span>
+          <span class="pill" onclick="setPrazo(0,this)">Personalizado</span>
+        </div>
+        <input id="f-prazo" type="date">
+      </div>
+
+      <div class="grid3 field-mb" style="gap:12px;" id="campos-canais">
+        <div id="campo-pae"><label>Enviado via PAE?</label><select id="f-pae"><option value="sim">Sim</option><option value="nao">Não</option></select></div>
+        <div><label>Enviado via WhatsApp?</label><select id="f-wpp"><option value="sim">Sim</option><option value="nao">Não</option></select></div>
+        <div><label>E-mail da unidade</label><input id="f-email-unidade" type="text" placeholder="Preenchido automaticamente"></div>
+      </div>
+
+      <div class="field-mb">
+        <label>Observações</label>
+        <textarea id="f-obs" placeholder="Anotações adicionais..." style="min-height:56px;"></textarea>
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:center;padding-top:14px;border-top:1px solid #e0e0d8;">
+        <button class="btn btn-primary" id="btn-salvar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Registrar Ofício
+        </button>
+        <button class="btn" onclick="limparForm()">Limpar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA OFÍCIOS -->
+  <div class="content" id="tab-lista">
+    <div class="section-card" style="padding:12px 16px;">
+      <div class="filtros-bar">
+        <div class="field search-input"><label>Buscar</label><input type="text" id="busca-texto" placeholder="Nº ofício, delegado, unidade, assunto..." oninput="filtrar()"></div>
+        <div class="field"><label>Status</label>
+          <select id="f-status-filtro" onchange="filtrar()">
+            <option value="">Todos</option>
+            <option value="pendente">Pendente</option>
+            <option value="respondido">Respondido</option>
+            <option value="atendido">Atendido</option>
+          </select>
+        </div>
+        <div class="field"><label>Origem</label>
+          <select id="f-origem-filtro" onchange="filtrar()">
+            <option value="">Todas</option>
+            <option value="MP">Ministério Público</option>
+            <option value="Judiciário">Judiciário</option>
+            <option value="Corregedoria">Corregedoria</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div class="field"><label>Unidade</label><select id="f-unidade-filtro" onchange="filtrar()"><option value="">Todas</option></select></div>
+        <div class="field"><label>Prazo</label>
+          <select id="f-prazo-filtro" onchange="filtrar()">
+            <option value="">Todos</option>
+            <option value="vencido">Vencidos</option>
+            <option value="hoje">Vencem hoje</option>
+            <option value="proximos">Próximos 5 dias</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:6px;align-items:flex-end;">
+          <button class="btn btn-sm btn-primary" onclick="carregarOficios()">↺ Atualizar</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#888;" id="lista-info"></div>
+    </div>
+
+    <div class="tabela-wrap">
+      <table class="proc-table">
+        <thead>
+          <tr>
+            <th>Nº Ofício</th>
+            <th>Delegado</th>
+            <th>Unidade</th>
+            <th>Origem</th>
+            <th>Assunto</th>
+            <th>Envio</th>
+            <th>Prazo</th>
+            <th>Dias</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-corpo">
+          <tr><td colspan="10" class="vazio"><span class="spinner"></span> Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ABA RELATÓRIOS -->
+  <div class="content" id="tab-relatorios">
+
+    <div class="section-card" style="padding:12px 16px;margin-bottom:14px;">
+      <div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;">
+        <div style="font-size:13px;font-weight:700;color:#0d2545;align-self:center;">📊 Painel de Ofícios</div>
+        <div style="min-width:120px;">
+          <label style="font-size:11px;">Data início</label>
+          <input type="date" id="rel-de" style="font-size:12px;padding:5px 8px;">
+        </div>
+        <div style="min-width:120px;">
+          <label style="font-size:11px;">Data fim</label>
+          <input type="date" id="rel-ate" style="font-size:12px;padding:5px 8px;">
+        </div>
+        <div style="min-width:130px;">
+          <label style="font-size:11px;">Origem</label>
+          <select id="rel-origem" style="font-size:12px;padding:5px 8px;">
+            <option value="">Todas</option>
+            <option value="MP">Ministério Público</option>
+            <option value="Judiciário">Judiciário</option>
+            <option value="Corregedoria">Corregedoria</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="gerarRelatorio()">🔄 Gerar</button>
+        <button class="btn btn-sm" onclick="exportarRelCSV()">⬇ CSV</button>
+      </div>
+    </div>
+
+    <!-- KPIs do relatório -->
+    <div class="kpi-grid" id="rel-kpis"></div>
+
+    <!-- Ranking de atrasos -->
+    <div class="section-card" style="margin-bottom:14px;">
+      <div class="section-title" style="color:#791F1F;">🏆 Ranking de atrasos por delegado</div>
+      <div id="rel-ranking-atrasos"></div>
+    </div>
+
+    <!-- Por status e por origem -->
+    <div class="grid2" style="gap:14px;margin-bottom:14px;">
+      <div class="section-card">
+        <div class="section-title">Por Status</div>
+        <div id="rel-por-status"></div>
+      </div>
+      <div class="section-card">
+        <div class="section-title">Por Origem</div>
+        <div id="rel-por-origem"></div>
+      </div>
+    </div>
+
+    <!-- Por delegado enviados -->
+    <div class="section-card" style="margin-bottom:14px;">
+      <div class="section-title">Ofícios enviados por delegado</div>
+      <div id="rel-por-delegado"></div>
+    </div>
+
+    <!-- Por delegado respondidos -->
+    <div class="section-card" style="margin-bottom:14px;">
+      <div class="section-title">Ofícios respondidos / atendidos por delegado</div>
+      <div id="rel-respondidos-delegado"></div>
+    </div>
+
+    <!-- Vencidos e pendentes -->
+    <div class="section-card" style="margin-bottom:14px;">
+      <div class="section-title" style="color:#791F1F;">⚠ Ofícios vencidos ou pendentes há mais tempo</div>
+      <div id="rel-vencidos"></div>
+    </div>
+
+    <!-- Ficha por delegado -->
+    <div class="section-card" style="margin-bottom:14px;">
+      <div class="section-title">📋 Ficha por delegado — ofícios atrasados</div>
+      <div style="font-size:12px;color:#888;margin-bottom:12px;">Clique no nome do delegado para ver a relação completa dos ofícios atrasados.</div>
+      <div id="rel-ficha-delegado"></div>
+    </div>
+
+    <!-- Por unidade -->
+    <div class="section-card" style="margin-bottom:14px;">
+      <div class="section-title">Ofícios por unidade / delegacia</div>
+      <div id="rel-por-unidade"></div>
+    </div>
+
+  </div>
+
+</div><!-- fim sistema -->
+
+<!-- MODAL DETALHE/EDIÇÃO -->
+<div class="modal-overlay" id="modal-detalhe" onclick="fecharDetalhe(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="d-num"></h2>
+      <button class="modal-close" onclick="fecharDetalhe()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:#888;margin-bottom:14px;font-weight:600;" id="d-meta"></div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Identificação</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div>
+            <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Delegado</div>
+            <div style="font-size:13px;font-weight:600;" id="d-delegado"></div>
+            <div style="font-size:11px;color:#1a3a6b;font-family:monospace;margin-top:2px;" id="d-contato"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Unidade</div>
+            <div style="font-size:13px;" id="d-unidade"></div>
+            <div style="font-size:11px;color:#888;margin-top:2px;" id="d-email-unidade"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Origem</div>
+            <div style="font-size:13px;" id="d-origem"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Referência PAE / e-mail</div>
+            <div style="font-size:13px;" id="d-ref"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Data de envio</div>
+            <div style="font-size:13px;" id="d-envio"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Prazo final</div>
+            <div style="font-size:13px;font-weight:600;" id="d-prazo"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Canais de envio</div>
+            <div id="d-canais"></div>
+          </div>
+        </div>
+        <div style="background:#f8f9ff;border-left:3px solid #1a3a6b;border-radius:0 6px 6px 0;padding:10px 12px;font-size:13px;margin-bottom:8px;" id="d-assunto"></div>
+        <div style="background:#fafaf4;border-radius:6px;padding:10px 12px;font-size:13px;font-style:italic;color:#666;display:none;" id="d-obs"></div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Atualizar status</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="d-status-btns"></div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Prorrogar prazo</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="date" id="d-nova-data" style="max-width:180px;">
+          <input type="text" id="d-prorrog-motivo" placeholder="Motivo da prorrogação" style="flex:1;min-width:180px;">
+          <button class="btn btn-primary btn-sm" onclick="prorrogar()">Prorrogar</button>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Histórico</div>
+        <div id="d-hist"></div>
+      </div>
+
+      <div class="row-btns">
+        <button class="btn btn-danger" onclick="excluir()">Excluir</button>
+        <button class="btn btn-primary" onclick="editarAtual()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Editar
+        </button>
+        <button class="btn" onclick="fecharDetalhe()">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ CONFIG ═══
+const SB_URL='https://tkkxjhzarmcnlasuwdww.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRra3hqaHphcm1jbmxhc3V3ZHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjgwOTksImV4cCI6MjA5MjEwNDA5OX0.MKqZTxv45bD8v6U_69u_mZdcvxxI3FlEij4wNs6vtDk';
+const TIPO='oficio_cgpc';
+
+// ═══ UNIDADES 10ª RISP ═══
+const UNIDADES=[
+  {id:'risp10_sede',  nome:'10ª RISP — Sede Marabá',                email:'cartoriomarabasup@gmail.com'},
+  {id:'sec21',        nome:'21ª Seccional de Marabá',                email:'cartoriomaraba@policiacivil.pa.gov.br'},
+  {id:'uisp_saofelix',nome:'UISP São Félix',                         email:'uispsaofelix@gmail.com'},
+  {id:'cidadenova',   nome:'Unidade Cidade Nova — Marabá',           email:'MARABA.CIDADENOVA@policiacivil.pa.gov.br'},
+  {id:'dh_maraba',    nome:'Delegacia de Homicídios — Marabá',       email:'dhmarabapa@gmail.com'},
+  {id:'deam_maraba',  nome:'DEAM Marabá',                            email:'maraba.deam@gmail.com'},
+  {id:'deaca_maraba', nome:'DEACA Marabá',                           email:'maraba.deaca@gmail.com'},
+  {id:'deca_maraba',  nome:'DECA Marabá',                            email:'decapoliciacivil@gmail.com'},
+  {id:'abel',         nome:'Delegacia de Abel Figueiredo',           email:'abelfigueiredo@policiacivil.pa.gov.br'},
+  {id:'bomjesus',     nome:'Delegacia de Bom Jesus do Tocantins',    email:'bjtocantins@policiacivil.pa.gov.br'},
+  {id:'brejo',        nome:'Delegacia de Brejo Grande do Araguaia',  email:'cartorio.bga.pcpa@gmail.com'},
+  {id:'itupiranga',   nome:'Delegacia de Itupiranga',                email:'depol.itupiranga@gmail.com'},
+  {id:'novaipixuna',  nome:'Delegacia de Nova Ipixuna',              email:'novaipixuna@policiacivil.pa.gov.br'},
+  {id:'palestina',    nome:'Delegacia de Palestina do Pará',         email:'delegacia.palestina22@gmail.com'},
+  {id:'picarra',      nome:'Delegacia de Piçarra',                   email:'depolpicarra2022@gmail.com'},
+  {id:'rondon',       nome:'Delegacia de Rondon do Pará',            email:'DelegaciadeRondondoPara@gmail.com'},
+  {id:'sdomingos',    nome:'Delegacia de São Domingos do Araguaia',  email:'araguaiadomingos@gmail.com'},
+  {id:'sgeraldo',     nome:'Delegacia de São Geraldo do Araguaia',   email:'depolsga@gmail.com'},
+  {id:'sjoao',        nome:'Delegacia de São João do Araguaia',      email:'depolsja@gmail.com'},
+  // ── 16ª RISP ──
+  {id:'risp16_sede',  nome:'16ª RISP — Superintendência Regional de Carajás', email:''},
+  {id:'sec20',        nome:'20ª Seccional Urbana — Parauapebas',     email:''},
+  {id:'dh_parauapebas',nome:'Delegacia de Homicídios — Parauapebas', email:''},
+  {id:'deam_parauapebas',nome:'DEAM Parauapebas',                    email:''},
+  {id:'deaca_parauapebas',nome:'DEACA Parauapebas',                  email:''},
+  {id:'canaa',        nome:'Delegacia de Canaã dos Carajás',         email:''},
+  {id:'deam_canaa',   nome:'DEAM Canaã dos Carajás',                 email:''},
+  {id:'eldorado',     nome:'Delegacia de Eldorado dos Carajás',      email:''},
+  {id:'curionopolis', nome:'Delegacia de Curionópolis',              email:''},
+];
+
+const DELEGADOS=[
+  {nome:'Vinícius Cardoso Neves',             cargo:'Superintendente',  telefone:'(94) 98145-1399', unidade:'risp10_sede'},
+  {nome:'Eliene Carla de Lima',               cargo:'Assistente DPC',   telefone:'(94) 98404-9249', unidade:'risp10_sede'},
+  {nome:'Antonio Mororo Junior',              cargo:'Diretor',          telefone:'(94) 99211-1920', unidade:'sec21'},
+  {nome:'Bruno Martins Mesquita',             cargo:'DPC',              telefone:'(82) 99696-4030', unidade:'sec21'},
+  {nome:'Pedro Marinho de Souza',             cargo:'DPC',              telefone:'(99) 99152-4890', unidade:'sec21'},
+  {nome:'Luiz Otavio Ernesto de Barros',      cargo:'DPC',              telefone:'(94) 99157-7985', unidade:'sec21'},
+  {nome:'William Lopes Crispim',              cargo:'DPC',              telefone:'(94) 99152-6437', unidade:'sec21'},
+  {nome:'Lucas Assis Nunes',                  cargo:'DPC',              telefone:'(94) 99256-4958', unidade:'sec21'},
+  {nome:'Washington Santos de Oliveira',      cargo:'DPC',              telefone:'(94) 99249-9953', unidade:'sec21'},
+  {nome:'Rodrigo Gonçalves Graças',           cargo:'DPC',              telefone:'(62) 99106-6835', unidade:'sec21'},
+  {nome:'Djalma Antonio Paula dos Santos',    cargo:'DPC',              telefone:'(31) 99917-4844', unidade:'uisp_saofelix'},
+  {nome:'Elcio Fideles de Deus',              cargo:'DPC',              telefone:'(93) 98422-9644', unidade:'cidadenova'},
+  {nome:'Gabriel Angelo de Oliveira Santos',  cargo:'DPC',              telefone:'(31) 98153-9299', unidade:'cidadenova'},
+  {nome:'Vítor Luiz Gonçalves Rocha da Costa',cargo:'DPC',             telefone:'(31) 99372-8736', unidade:'dh_maraba'},
+  {nome:'Simone Felinto França',              cargo:'DPC',              telefone:'(94) 98176-8666', unidade:'dh_maraba'},
+  {nome:'Leandro da Conceição Benício',       cargo:'DPC',              telefone:'(987) 98116-4865',unidade:'dh_maraba'},
+  {nome:'Bianca Maria Leão dos Santos Vieira',cargo:'DPC Titular',     telefone:'(99) 99190-2956', unidade:'deam_maraba'},
+  {nome:'Allana Christhy Fernandes Araujo',   cargo:'DPC',              telefone:'(62) 98232-9599', unidade:'deam_maraba'},
+  {nome:'Luciana Costa de Menezes',           cargo:'DPC',              telefone:'(99) 98164-6058', unidade:'deam_maraba'},
+  {nome:'Yasmin Santos Andrade Faria',        cargo:'DPC',              telefone:'(61) 99833-2380', unidade:'deam_maraba'},
+  {nome:'Laiz Ruiz de Souza',                 cargo:'DPC',              telefone:'(44) 99978-8024', unidade:'deam_maraba'},
+  {nome:'Lívia Rodrigues Queiroz Ferraz',     cargo:'DPC',              telefone:'(99) 981232672',  unidade:'deaca_maraba'},
+  {nome:'Vannir Wagner Fernandes Sousa',      cargo:'DPC',              telefone:'(71) 99217-9098', unidade:'deca_maraba'},
+  {nome:'Jose Lenio Ferreira Duarte',         cargo:'DPC',              telefone:'(94) 99146-7231', unidade:'abel'},
+  {nome:'Eric de Lima Santos',                cargo:'DPC',              telefone:'(69) 99255-0596', unidade:'bomjesus'},
+  {nome:'Igor Wanick Mattos Guimarães',       cargo:'DPC',              telefone:'(27) 99738-9338', unidade:'brejo'},
+  {nome:'Timoteo de Oliveira Soares',         cargo:'DPC',              telefone:'(94) 98115-8100', unidade:'itupiranga'},
+  {nome:'Leandro Pontes Oliveira',            cargo:'DPC',              telefone:'(61) 99907-7760', unidade:'itupiranga'},
+  {nome:'Celso Menditti Lima',                cargo:'DPC',              telefone:'(28) 99920-7420', unidade:'novaipixuna'},
+  {nome:'Jailson Lucena da Silva',            cargo:'DPC',              telefone:'(94) 99227-7237', unidade:'palestina'},
+  {nome:'Rodolfo Carvalho Rocha',             cargo:'DPC',              telefone:'(94) 99193-4701', unidade:'picarra'},
+  {nome:'Wellton dos Santos Fernandes',       cargo:'DPC',              telefone:'(99) 98155-0659', unidade:'rondon'},
+  {nome:'Thiago Santos da Silva',             cargo:'DPC',              telefone:'(94) 99247-5701', unidade:'rondon'},
+  {nome:'Walter Ruiz Bogaz Neto',             cargo:'DPC',              telefone:'(17) 93300-0918', unidade:'sdomingos'},
+  {nome:'Daniel Albrecht Ferreira',           cargo:'DPC',              telefone:'(93) 98102-6604', unidade:'sdomingos'},
+  {nome:'Edesio Ribeiro dos Santos',          cargo:'DPC',              telefone:'(63) 98401-6526', unidade:'sgeraldo'},
+  {nome:'Toni Rinaldo Rodrigues de Vargas',   cargo:'DPC',              telefone:'(94) 98164-7006', unidade:'sjoao'},
+  // ── 16ª RISP ──
+  {nome:'Joao Abel Barbosa de Mattos',        cargo:'Superintendente Regional', telefone:'',          unidade:'risp16_sede'},
+  {nome:'Luciano Ramos de Oliveira',          cargo:'Diretor de Seccional',     telefone:'',          unidade:'sec20'},
+  {nome:'Diego Maximo do Prado',              cargo:'DPC',              telefone:'',                  unidade:'sec20'},
+  {nome:'Dufrae Abade Paiva',                 cargo:'DPC',              telefone:'',                  unidade:'sec20'},
+  {nome:'Fernando Barbosa Marins',            cargo:'DPC',              telefone:'',                  unidade:'sec20'},
+  {nome:'Gabriel Henrique Alves Costa',       cargo:'DPC',              telefone:'',                  unidade:'sec20'},
+  {nome:'Jorge Gilson Ishibashi Carneiro',    cargo:'DPC',              telefone:'',                  unidade:'sec20'},
+  {nome:'Kari Grazielle Klat',               cargo:'DPC',              telefone:'',                  unidade:'sec20'},
+  {nome:'Melquesedeque da Silva Ribeiro',     cargo:'DPC',              telefone:'',                  unidade:'sec20'},
+  {nome:'Nelson Alves Junior',               cargo:'DPC',              telefone:'',                  unidade:'sec20'},
+  {nome:'Thiago Carneiro Rodrigues',          cargo:'DPC',              telefone:'',                  unidade:'sec20'},
+  {nome:'Felipe Oliveira Freitas',            cargo:'DPC',              telefone:'',                  unidade:'dh_parauapebas'},
+  {nome:'Yanna Kaline Wanderley de Azevedo', cargo:'DPC',              telefone:'',                  unidade:'dh_parauapebas'},
+  {nome:'Jullya Gabryella Oliveira Santos',   cargo:'DPC Titular',      telefone:'',                  unidade:'deam_parauapebas'},
+  {nome:'Isabella de Luca Martines',         cargo:'DPC',              telefone:'',                  unidade:'deam_parauapebas'},
+  {nome:'Thiany Souza Marins',               cargo:'DPC',              telefone:'',                  unidade:'deam_parauapebas'},
+  {nome:'Daniela Vieira Bezerra',            cargo:'DPC',              telefone:'',                  unidade:'deaca_parauapebas'},
+  {nome:'Leticia Suassuna de Morais Goncales',cargo:'DPC',             telefone:'',                  unidade:'deaca_parauapebas'},
+  {nome:'Patricia Brandao de Mesquita',      cargo:'DPC Titular',      telefone:'',                  unidade:'canaa'},
+  {nome:'Luca Franca da Costa Soares',       cargo:'DPC',              telefone:'',                  unidade:'canaa'},
+  {nome:'Nathalia Alves da Silva Ferreira',  cargo:'DPC',              telefone:'',                  unidade:'deam_canaa'},
+  {nome:'Vannir Wagner Fernandes Sousa',     cargo:'DPC',              telefone:'',                  unidade:'eldorado'},
+  {nome:'Jose Euclides Aquino da Silva',     cargo:'DPC',              telefone:'',                  unidade:'curionopolis'},
+];
+
+// ═══ SUPABASE AUTH CLIENT ═══
+let sbAuth;
+try {
+  sbAuth = window.supabase.createClient(SB_URL, SB_KEY, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    }
+  });
+} catch(e) {
+  console.error('Erro ao inicializar Supabase:', e);
+}
+
+// ═══ MAPA primeiro_nome → email (para login por nome) ═══
+const MAPA_LOGIN = {
+  'marcio':    'marcio.maio@cgpc.pcpa.gov.br',
+  'marcelo':   'marcelo.dias@cgpc.pcpa.gov.br',
+  'samantha':  'samantha.bittencourth@cgpc.pcpa.gov.br',
+  'henry':     'henry.lorenz@cgpc.pcpa.gov.br',
+  'alenilde':  'alenilde.goncalves@cgpc.pcpa.gov.br',
+  'antonio':   'antonio.portela@cgpc.pcpa.gov.br',
+};
+
+// ═══ ESTADO ═══
+let usuarioLogado=null;
+let sbToken=null;
+let oficios=[];
+let detailId=null;
+let editId=null;
+let dashDocs=[];let dashPagAtual=0;const DASH_PAG=10;
+const hoje=new Date();hoje.setHours(0,0,0,0);
+
+// ═══ INICIALIZAR SELECTS ═══
+(function(){
+  const sf=document.getElementById('f-unidade-form');
+  const sf2=document.getElementById('f-unidade-filtro');
+  UNIDADES.forEach(u=>{
+    sf.innerHTML+=`<option value="${u.id}">${u.nome}</option>`;
+    sf2.innerHTML+=`<option value="${u.id}">${u.nome}</option>`;
+  });
+})();
+document.getElementById('f-unidade-form').addEventListener('change',function(){
+  const u=UNIDADES.find(x=>x.id===this.value);
+  if(u) document.getElementById('f-email-unidade').value=u.email;
+});
+
+// ═══ HELPERS ═══
+function toast(msg,dur=3000){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',dur);}
+function fmtDate(s){if(!s)return'—';const d=new Date(s.length===10?s+'T12:00:00':s);return d.toLocaleDateString('pt-BR');}
+function diasRestantes(p){if(!p)return 999;const d=new Date(p.length===10?p+'T12:00:00':p);return Math.round((d-hoje)/(864e5));}
+function unidadeNome(id){return UNIDADES.find(u=>u.id===id)?.nome||id||'—';}
+
+async function sbFetch(path,opts={}){
+  const token=sbToken||SB_KEY;
+  const res=await fetch(SB_URL+path,{...opts,headers:{'apikey':SB_KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=representation',...(opts.headers||{})}});
+  const txt=await res.text();const json=txt?JSON.parse(txt):null;
+  if(!res.ok)throw new Error(json?.message||json?.hint||'Erro HTTP '+res.status);
+  return json;
+}
+
+async function auditoria(acao,detalhes){
+  if(!usuarioLogado)return;
+  fetch(SB_URL+'/rest/v1/auditoria',{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+(sbToken||SB_KEY),'Content-Type':'application/json','Prefer':'return=minimal'},
+    body:JSON.stringify({acao,detalhes,usuario:usuarioLogado.nome,matricula:usuarioLogado.matricula,cargo:usuarioLogado.cargo,setor:usuarioLogado.setor,proc_tipo:TIPO})
+  }).catch(()=>{});
+}
+
+// ═══ LOGIN ═══
+document.getElementById('login-usuario').addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin();});
+document.getElementById('login-senha').addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin();});
+
+async function fazerLogin(){
+  const primeiroNome=(document.getElementById('login-usuario').value||'').trim().toLowerCase();
+  const matricula=(document.getElementById('login-senha').value||'').trim();
+  const erro=document.getElementById('login-erro');erro.style.display='none';
+  const btn=document.querySelector('.login-btn');
+  btn.innerHTML='<span class="spinner" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;"></span> Entrando...';
+  btn.disabled=true;
+
+  try{
+    // Verificar se Supabase carregou
+    if(!sbAuth){
+      erro.textContent='Erro de inicialização. Recarregue a página.';
+      erro.style.display='block';
+      btn.innerHTML='Entrar';btn.disabled=false;return;
+    }
+
+    // Buscar email pelo primeiro nome
+    const email=MAPA_LOGIN[primeiroNome];
+    if(!email){
+      erro.textContent='Usuário ou senha incorretos.';
+      erro.style.display='block';
+      btn.innerHTML='Entrar';btn.disabled=false;return;
+    }
+
+    // Autenticar via Supabase Auth (senha = matrícula)
+    const {data,error}=await sbAuth.auth.signInWithPassword({email,password:matricula});
+    if(error||!data?.user){
+      erro.textContent='Usuário ou senha incorretos.';
+      erro.style.display='block';
+      btn.innerHTML='Entrar';btn.disabled=false;return;
+    }
+
+    // Pegar metadados do usuário
+    const meta=data.user.user_metadata||{};
+    sbToken=data.session.access_token;
+    usuarioLogado={
+      nome:     meta.nome     || data.user.email,
+      cargo:    meta.cargo    || '—',
+      matricula:meta.matricula|| '—',
+      setor:    meta.setor    || '—',
+    };
+
+    _ativarSistema();
+    await auditoria('login','Acesso ao sistema de ofícios');
+    await carregarOficios();
+  }catch(e){
+    erro.textContent='Erro de conexão. Tente novamente.';
+    erro.style.display='block';
+    console.error('Login error:',e);
+  }
+  btn.innerHTML='Entrar';btn.disabled=false;
+}
+
+function _ativarSistema(){
+  const u=usuarioLogado;
+  document.getElementById('h-avatar').textContent=u.nome.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
+  document.getElementById('h-nome').textContent=u.nome.split(' ').slice(0,2).join(' ');
+  document.getElementById('dash-nome').textContent=u.nome;
+  document.getElementById('dash-cargo').textContent=u.cargo+' — '+u.setor;
+  document.getElementById('dash-data').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('tela-login').style.display='none';
+  document.getElementById('sistema').style.display='block';
+  testarConexao();
+}
+
+async function fazerLogout(){
+  await auditoria('logout','Saída do sistema de ofícios');
+  await sbAuth.auth.signOut();
+  sbToken=null;usuarioLogado=null;
+  document.getElementById('login-usuario').value='';
+  document.getElementById('login-senha').value='';
+  document.getElementById('sistema').style.display='none';
+  document.getElementById('tela-login').style.display='flex';
+}
+
+async function testarConexao(){
+  try{await sbFetch('/rest/v1/documentos?limit=1');document.getElementById('db-dot').className='db-dot ok';document.getElementById('db-txt').textContent='Banco conectado';}
+  catch(e){document.getElementById('db-dot').className='db-dot err';document.getElementById('db-txt').textContent='Sem conexão';}
+}
+
+// ═══ ABAS ═══
+function trocarAba(id,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.content').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='lista')filtrar();
+  if(id==='dashboard')renderDash();
+  if(id==='novo'){limparForm();tipoDocChange('oficio');}
+  if(id==='relatorios')gerarRelatorio();
+}
+
+// ═══ CARREGAR ═══
+async function carregarOficios(){
+  try{
+    const data=await sbFetch(`/rest/v1/documentos?tipo=eq.${TIPO}&order=prazo_vencimento.asc&limit=1000`)||[];
+    oficios=data;renderKpis();renderAlertas();renderDash();filtrar();
+  }catch(e){document.getElementById('tabela-corpo').innerHTML='<tr><td colspan="10" class="vazio" style="color:#791F1F;">Erro ao carregar.</td></tr>';}
+}
+
+function renderKpis(){
+  let venc=0,hoj=0,atend=0,pend=0;
+  oficios.forEach(o=>{
+    if(o.status==='atendido'){atend++;return;}
+    if(o.status==='pendente')pend++;
+    const d=diasRestantes(o.prazo_vencimento?.split('T')[0]);
+    if(d<0)venc++;else if(d<=1)hoj++;
+  });
+  document.getElementById('kpis').innerHTML=[
+    {val:oficios.length,label:'Total de ofícios',   cor:'#1a3a6b',bg:'#E6F1FB'},
+    {val:pend,          label:'Pendentes',           cor:'#633806', bg:'#FAEEDA'},
+    {val:venc,          label:'Vencidos',            cor:'#791F1F', bg:'#FCEBEB'},
+    {val:hoj,           label:'Vencem hoje/amanhã',  cor:'#856404', bg:'#fff3cd'},
+    {val:atend,         label:'Atendidos',           cor:'#27500A', bg:'#EAF3DE'},
+  ].map(k=>`<div class="kpi-card" style="border-top:3px solid ${k.cor};background:${k.bg};"><div class="kpi-val" style="color:${k.cor};">${k.val}</div><div class="kpi-label">${k.label}</div></div>`).join('');
+}
+
+function renderAlertas(){
+  const alertas=[];
+  oficios.filter(o=>o.status!=='atendido').forEach(o=>{
+    const ps=o.prazo_vencimento?.split('T')[0];
+    const d=diasRestantes(ps);
+    const lbl=`${o.num||'—'} — ${o.destinatario_nome||'—'}`;
+    if(d<0)alertas.push({cls:'alerta-vencido',icon:'⚠️',titulo:`Prazo VENCIDO há ${Math.abs(d)} dia(s)`,sub:`Venceu em ${fmtDate(ps)} — ${lbl}`,id:o.id});
+    else if(d===0)alertas.push({cls:'alerta-hoje',icon:'🔴',titulo:'Prazo vence HOJE',sub:lbl,id:o.id});
+    else if(d===1)alertas.push({cls:'alerta-hoje',icon:'🟡',titulo:'Prazo vence AMANHÃ',sub:lbl,id:o.id});
+  });
+  const painel=document.getElementById('painel-alertas');
+  if(!alertas.length){painel.style.display='none';return;}
+  painel.style.display='block';
+  document.getElementById('lista-alertas').innerHTML=alertas.map(a=>`
+    <div class="alerta-prazo ${a.cls}" onclick="abrirDetalhe('${a.id}')">
+      <div class="alerta-icon">${a.icon}</div>
+      <div class="alerta-corpo"><div class="alerta-titulo">${a.titulo}</div><div class="alerta-sub">${a.sub}</div></div>
+      <div style="font-size:11px;opacity:.7;flex-shrink:0;align-self:center;">abrir →</div>
+    </div>`).join('');
+}
+
+function renderDash(){
+  dashDocs=[...oficios].filter(o=>o.status!=='atendido').sort((a,b)=>diasRestantes(a.prazo_vencimento?.split('T')[0])-diasRestantes(b.prazo_vencimento?.split('T')[0]));
+  dashPagAtual=0;_renderDashLista();
+}
+
+function _renderDashLista(){
+  const total=Math.ceil(dashDocs.length/DASH_PAG)||1;
+  const ini=dashPagAtual*DASH_PAG;
+  const pag=dashDocs.slice(ini,ini+DASH_PAG);
+  document.getElementById('dash-pag-info').textContent=dashDocs.length?`Página ${dashPagAtual+1} de ${total} — ${dashDocs.length} ofício(s) ativo(s)`:'Nenhum ofício ativo';
+  document.getElementById('dash-btn-ant').disabled=dashPagAtual===0;
+  document.getElementById('dash-btn-prox').disabled=dashPagAtual>=total-1;
+  if(!pag.length){document.getElementById('dash-lista').innerHTML='<div class="vazio">✔ Nenhum ofício ativo no momento.</div>';return;}
+  document.getElementById('dash-lista').innerHTML=pag.map((o,i)=>{
+    const ps=o.prazo_vencimento?.split('T')[0];const d=diasRestantes(ps);
+    let diasHtml='';
+    if(d<0)diasHtml=`<span class="dias-label dias-neg">${Math.abs(d)}d atraso</span>`;
+    else if(d===0)diasHtml='<span class="dias-label dias-zero">hoje</span>';
+    else if(d===1)diasHtml='<span class="dias-label dias-zero">amanhã</span>';
+    else diasHtml=`<span class="dias-label dias-pos">${d}d</span>`;
+    let stBadge='';
+    if(o.status==='pendente')stBadge='<span class="badge-status bs-pendente">Pendente</span>';
+    else stBadge='<span class="badge-status bs-respondido">Respondido</span>';
+    return `<div onclick="abrirDetalhe('${o.id}')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:#fff;border-top:1px solid #f0f0e8;cursor:pointer;transition:background .12s;" onmouseover="this.style.background='#f5f8ff'" onmouseout="this.style.background='#fff'">
+      <span style="font-size:11px;color:#bbb;min-width:20px;text-align:right;flex-shrink:0;">${ini+i+1}.</span>
+      <span class="proc-num" style="flex-shrink:0;">${o.num||'—'}</span>
+      <span style="font-size:12px;color:#555;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${o.destinatario_nome||'—'} — ${unidadeNome(o.destinatario_cargo)}</span>
+      ${diasHtml}
+      ${stBadge}
+      <span style="font-size:11px;color:#aaa;flex-shrink:0;white-space:nowrap;">${fmtDate(ps)}</span>
+    </div>`;
+  }).join('');
+}
+
+function dashPag(dir){
+  const total=Math.ceil(dashDocs.length/DASH_PAG)||1;
+  dashPagAtual=Math.max(0,Math.min(dashPagAtual+dir,total-1));
+  _renderDashLista();
+}
+
+// ═══ FILTRAR TABELA ═══
+function filtrar(){
+  const busca=document.getElementById('busca-texto').value.toLowerCase();
+  const fs=document.getElementById('f-status-filtro').value;
+  const fo=document.getElementById('f-origem-filtro').value;
+  const fu=document.getElementById('f-unidade-filtro').value;
+  const fp=document.getElementById('f-prazo-filtro').value;
+  let lista=oficios.filter(o=>{
+    const txt=(o.num+o.destinatario_nome+o.assunto+o.num_externo+o.destinatario_cargo+'').toLowerCase();
+    if(busca&&!txt.includes(busca))return false;
+    if(fs&&o.status!==fs)return false;
+    if(fo&&o.remetente!==fo)return false;
+    if(fu&&o.destinatario_cargo!==fu)return false;
+    if(fp){
+      if(o.status==='atendido')return false;
+      const d=diasRestantes(o.prazo_vencimento?.split('T')[0]);
+      if(fp==='vencido'&&d>=0)return false;
+      if(fp==='hoje'&&d!==0)return false;
+      if(fp==='proximos'&&(d<0||d>5))return false;
+    }
+    return true;
+  });
+  document.getElementById('lista-info').textContent=`${lista.length} ofício(s) encontrado(s)`;
+  if(!lista.length){document.getElementById('tabela-corpo').innerHTML='<tr><td colspan="10" class="vazio">Nenhum ofício encontrado.</td></tr>';return;}
+  document.getElementById('tabela-corpo').innerHTML=lista.map(o=>{
+    const ps=o.prazo_vencimento?.split('T')[0];const d=diasRestantes(ps);
+    let dh='';
+    if(o.status==='atendido')dh='<span class="dias-label" style="color:#aaa;">—</span>';
+    else if(d<0)dh=`<span class="dias-label dias-neg">${Math.abs(d)}d</span>`;
+    else if(d===0)dh='<span class="dias-label dias-zero">hoje</span>';
+    else if(d===1)dh='<span class="dias-label dias-zero">amanhã</span>';
+    else dh=`<span class="dias-label dias-pos">${d}d</span>`;
+    let pb='';
+    if(o.status==='atendido')pb=`<span style="font-size:12px;color:#aaa;">${fmtDate(ps)}</span>`;
+    else if(d<0)pb=`<span class="badge-status bs-vencido">${fmtDate(ps)}</span>`;
+    else if(d<=1)pb=`<span class="badge-status bs-pendente">${fmtDate(ps)}</span>`;
+    else pb=`<span class="badge-status bs-atendido">${fmtDate(ps)}</span>`;
+    let sb='';
+    if(o.status==='pendente')sb='<span class="badge-status bs-pendente">Pendente</span>';
+    else if(o.status==='respondido')sb='<span class="badge-status bs-respondido">Respondido</span>';
+    else sb='<span class="badge-status bs-atendido">Atendido</span>';
+    const un=unidadeNome(o.destinatario_cargo);
+    const ac=(o.assunto||'—').length>45?(o.assunto||'').substring(0,45)+'…':o.assunto||'—';
+    return `<tr onclick="abrirDetalhe('${o.id}')">
+      <td class="proc-num">${o.num||'—'}</td>
+      <td>${o.destinatario_nome||'—'}</td>
+      <td style="font-size:12px;color:#555;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${un}">${un}</td>
+      <td><span class="badge-status bs-origem">${o.remetente||'—'}</span></td>
+      <td style="font-size:12px;color:#555;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${o.assunto||''}">${ac}</td>
+      <td style="font-size:12px;color:#888;white-space:nowrap;">${fmtDate(o.data?.split('T')[0])}</td>
+      <td>${pb}</td><td>${dh}</td><td>${sb}</td>
+      <td><button class="btn btn-sm btn-primary" onclick="event.stopPropagation();abrirDetalhe('${o.id}')">Abrir</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══ TIPO DE DOCUMENTO ═══
+function tipoDocChange(val){
+  const numLabel=document.getElementById('f-num-label');
+  const numInput=document.getElementById('f-num');
+  const campoPae=document.getElementById('campo-pae');
+  const campoRef=document.getElementById('campo-ref');
+  if(val==='oficio'){
+    numLabel.textContent='Nº do ofício *';
+    numInput.placeholder='Ex: 012/2025-CGPC';
+    campoPae.style.display='block';
+    campoRef.querySelector('label').textContent='Nº PAE / referência e-mail';
+    campoRef.querySelector('input').placeholder='Nº do PAE ou assunto do e-mail';
+    campoRef.style.display='block';
+    document.getElementById('f-pae').value='sim';
+  } else if(val==='pae'){
+    numLabel.textContent='Nº do PAE *';
+    numInput.placeholder='Ex: 2025.001.0234';
+    campoPae.style.display='none';
+    campoRef.querySelector('label').textContent='Referência adicional';
+    campoRef.querySelector('input').placeholder='Nº de outro documento de referência';
+    document.getElementById('f-pae').value='sim'; // PAE sempre é via PAE
+  } else {
+    numLabel.textContent='Nº do documento *';
+    numInput.placeholder='Selecione o tipo primeiro';
+    campoPae.style.display='block';
+  }
+  numInput.focus();
+}
+function selecionarDelegado(nome){
+  if(!nome) return;
+  const d=DELEGADOS.find(x=>x.nome===nome);
+  if(!d) return;
+  document.getElementById('f-contato').value=d.telefone;
+  document.getElementById('f-unidade-form').value=d.unidade;
+  const u=UNIDADES.find(x=>x.id===d.unidade);
+  if(u) document.getElementById('f-email-unidade').value=u.email;
+  // Rolar para mostrar o campo de prazo
+  setTimeout(()=>scrollToField('f-unidade-form'),50);
+}
+
+function scrollToField(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  const card=document.querySelector('#tab-novo .section-card');
+  if(card){
+    const elTop=el.getBoundingClientRect().top;
+    const cardTop=card.getBoundingClientRect().top;
+    card.scrollBy({top: elTop - cardTop - 20, behavior:'smooth'});
+  }
+}
+
+// Inicializar botão salvar
+document.addEventListener('DOMContentLoaded',()=>{
+  const btn=document.getElementById('btn-salvar');
+  if(btn) btn.onclick=salvar;
+
+  // Ao sair do assunto → rolar para delegado
+  document.getElementById('f-assunto')?.addEventListener('blur',function(){
+    if(this.value.trim()) setTimeout(()=>scrollToField('f-delegado'),50);
+  });
+});
+function setPrazo(dias,el){
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('sel'));el.classList.add('sel');
+  if(dias===0){document.getElementById('f-prazo').value='';return;}
+  const d=new Date(hoje);d.setDate(d.getDate()+dias);
+  document.getElementById('f-prazo').value=d.toISOString().split('T')[0];
+  setTimeout(()=>scrollToField('f-pae'),50);
+}
+
+// ═══ LIMPAR FORM ═══
+function limparForm(){
+  ['f-num','f-ref','f-assunto','f-email-unidade','f-obs','f-prazo'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  const elOrigem=document.getElementById('f-origem-val');if(elOrigem)elOrigem.value='';
+  const elUnidade=document.getElementById('f-unidade-form');if(elUnidade)elUnidade.selectedIndex=0;
+  const elDelegado=document.getElementById('f-delegado');if(elDelegado)elDelegado.selectedIndex=0;
+  const elTipo=document.getElementById('f-tipo-doc');if(elTipo)elTipo.value='oficio';
+  const elLabel=document.getElementById('f-num-label');if(elLabel)elLabel.textContent='Nº do ofício *';
+  const elNum=document.getElementById('f-num');if(elNum)elNum.placeholder='Ex: 012/2025-CGPC';
+  const elCampoPae=document.getElementById('campo-pae');if(elCampoPae)elCampoPae.style.display='block';
+  const elEnvio=document.getElementById('f-envio');if(elEnvio)elEnvio.value=hoje.toISOString().split('T')[0];
+  const elPae=document.getElementById('f-pae');if(elPae)elPae.selectedIndex=0;
+  const elWpp=document.getElementById('f-wpp');if(elWpp)elWpp.selectedIndex=0;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('sel'));
+  const btn=document.getElementById('btn-salvar');
+  if(btn){
+    btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg> Registrar Ofício';
+    btn.onclick=salvar;
+  }
+  editId=null;
+}
+
+// ═══ SALVAR ═══
+async function salvar(){
+  const num=(document.getElementById('f-num')?.value||'').trim();
+  const delegado=document.getElementById('f-delegado')?.value||'';
+  const unidadeId=document.getElementById('f-unidade-form')?.value||'';
+  const prazo=document.getElementById('f-prazo')?.value||'';
+  const envio=document.getElementById('f-envio')?.value||'';
+  const origem=document.getElementById('f-origem-val')?.value||'';
+  const tipoDoc=document.getElementById('f-tipo-doc')?.value||'oficio';
+  if(!origem){alert('Selecione a origem da requisição.');return;}
+  if(!num||!delegado||!unidadeId||!prazo||!envio){alert('Preencha todos os campos obrigatórios: nº, delegado, unidade, data e prazo.');return;}
+  const btn=document.getElementById('btn-salvar');
+  btn.innerHTML='<span class="spinner"></span> Salvando...';btn.disabled=true;
+  try{
+    const agora=new Date().toISOString();
+    const pae=document.getElementById('f-pae').value;
+    const wpp=document.getElementById('f-wpp').value;
+    const d=diasRestantes(prazo);
+    const historico=[{tipo:'canais',pae,wpp,data:agora,usuario:usuarioLogado?.nome},{tipo:'criacao',acao:'Criado',data:agora,usuario:usuarioLogado?.nome}];
+    const payload={
+      num,tipo:TIPO,
+      destinatario_nome:delegado,
+      destinatario_cargo:unidadeId,
+      destinatario_matricula:'',
+      remetente:origem,
+      remetente_matricula:document.getElementById('f-email-unidade').value.trim(),
+      assunto:document.getElementById('f-assunto').value.trim(),
+      num_externo:document.getElementById('f-ref').value.trim(),
+      obs:document.getElementById('f-obs').value.trim(),
+      data:envio+'T00:00:00',
+      prazo_vencimento:prazo+'T00:00:00',
+      prazo_dias:d,prazo_vencido:d<0,
+      status:'pendente',setor:'CGPC',sigilo:'normal',
+      lido:true,respondido:false,historico
+    };
+    await sbFetch('/rest/v1/documentos',{method:'POST',body:JSON.stringify(payload)});
+    await auditoria('criar_oficio',`Ofício ${num} — ${delegado}`);
+    toast('✔ Ofício registrado com sucesso!');
+    limparForm();
+    await carregarOficios();
+    setTimeout(()=>{trocarAba('lista',document.getElementById('tab-btn-lista'));},400);
+  }catch(e){
+    alert('Erro ao salvar: '+e.message);
+  }finally{
+    btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg> Registrar Ofício';
+    btn.disabled=false;
+  }
+}
+
+// ═══ DETALHE ═══
+function abrirDetalhe(id){
+  detailId=id;
+  const o=oficios.find(x=>x.id===id);if(!o)return;
+  const ps=o.prazo_vencimento?.split('T')[0];const d=diasRestantes(ps);
+  document.getElementById('d-num').textContent=o.num||'—';
+  let meta='';
+  if(o.status==='atendido')meta='✔ Atendido / concluído';
+  else if(d<0)meta=`⚠ Vencido há ${Math.abs(d)} dia(s)`;
+  else if(d===0)meta='🔴 Vence hoje!';
+  else if(d===1)meta='🟡 Vence amanhã';
+  else meta=`${d} dia(s) restantes para o prazo`;
+  document.getElementById('d-meta').textContent=meta;
+  document.getElementById('d-delegado').textContent=o.destinatario_nome||'—';
+  document.getElementById('d-contato').textContent=o.destinatario_matricula||'';
+  const unid=UNIDADES.find(u=>u.id===o.destinatario_cargo);
+  document.getElementById('d-unidade').textContent=unid?unid.nome:(o.destinatario_cargo||'—');
+  document.getElementById('d-email-unidade').textContent=o.remetente_matricula||unid?.email||'';
+  document.getElementById('d-origem').textContent=o.remetente||'—';
+  document.getElementById('d-ref').textContent=o.num_externo||'—';
+  document.getElementById('d-envio').textContent=fmtDate(o.data?.split('T')[0]);
+  document.getElementById('d-prazo').textContent=fmtDate(ps);
+  const canal=(o.historico||[]).find(h=>h.tipo==='canais');
+  let ch='';
+  if(canal?.pae==='sim')ch+='<span class="canal-tag canal-pae">PAE</span>';
+  if(canal?.wpp==='sim')ch+='<span class="canal-tag canal-wpp">WhatsApp</span>';
+  document.getElementById('d-canais').innerHTML=ch||'<span style="color:#aaa;font-size:12px;">—</span>';
+  document.getElementById('d-assunto').textContent=o.assunto||'—';
+  const obsEl=document.getElementById('d-obs');
+  if(o.obs){obsEl.textContent='Obs: '+o.obs;obsEl.style.display='block';}else{obsEl.style.display='none';}
+  const sb2=document.getElementById('d-status-btns');sb2.innerHTML='';
+  [{v:'pendente',l:'Pendente'},{v:'respondido',l:'Respondido'},{v:'atendido',l:'Atendido'}].forEach(({v,l})=>{
+    const b=document.createElement('button');
+    b.className='btn'+(o.status===v?' btn-primary':'');
+    b.textContent=l;b.onclick=()=>setStatus(v);sb2.appendChild(b);
+  });
+  const hist=(o.historico||[]).filter(h=>h.tipo!=='canais').reverse();
+  document.getElementById('d-hist').innerHTML=hist.length
+    ?`<div style="border-left:2px solid #d0d0c8;padding-left:12px;">${hist.map(h=>`<div class="hist-item"><div style="font-size:10px;color:#888;">${new Date(h.data).toLocaleString('pt-BR')}</div><div><strong>${h.acao||h.tipo}</strong>${h.usuario?' — '+h.usuario:''}${h.motivo?' — '+h.motivo:''}</div></div>`).join('')}</div>`
+    :'<div style="font-size:12px;color:#aaa;padding:8px 0;">Sem registros no histórico.</div>';
+  document.getElementById('d-nova-data').value='';
+  document.getElementById('d-prorrog-motivo').value='';
+  document.getElementById('modal-detalhe').classList.add('open');
+}
+
+async function setStatus(s){
+  const o=oficios.find(x=>x.id===detailId);if(!o)return;
+  const hist=o.historico||[];
+  hist.push({tipo:'status',acao:`Status alterado para: ${s}`,data:new Date().toISOString(),usuario:usuarioLogado?.nome});
+  await sbFetch(`/rest/v1/documentos?id=eq.${detailId}`,{method:'PATCH',body:JSON.stringify({status:s,respondido:s==='respondido'||s==='atendido',historico:hist})});
+  await auditoria('atualizar_status_oficio',`${o.num} → ${s}`);
+  toast('✔ Status atualizado!');fecharDetalhe();await carregarOficios();
+}
+
+async function prorrogar(){
+  const nd=document.getElementById('d-nova-data').value;
+  const motivo=document.getElementById('d-prorrog-motivo').value.trim();
+  if(!nd){alert('Informe a nova data.');return;}
+  const o=oficios.find(x=>x.id===detailId);
+  const hist=o.historico||[];
+  hist.push({tipo:'prorrogacao',acao:`Prazo prorrogado para ${fmtDate(nd)}`,motivo,data:new Date().toISOString(),usuario:usuarioLogado?.nome});
+  const d=diasRestantes(nd);
+  await sbFetch(`/rest/v1/documentos?id=eq.${detailId}`,{method:'PATCH',body:JSON.stringify({prazo_vencimento:nd+'T00:00:00',prazo_dias:d,prazo_vencido:d<0,prorrogacao:motivo,historico:hist})});
+  await auditoria('prorrogar_oficio',`${o.num} → novo prazo: ${nd}`);
+  toast('✔ Prazo prorrogado!');fecharDetalhe();await carregarOficios();
+}
+
+async function excluir(){
+  const o=oficios.find(x=>x.id===detailId);
+  if(!confirm(`Excluir o ofício ${o?.num}?\nEsta ação não pode ser desfeita e ficará registrada na auditoria.`))return;
+  await sbFetch(`/rest/v1/documentos?id=eq.${detailId}`,{method:'DELETE'});
+  await auditoria('excluir_oficio',`Excluído: ${o?.num} — ${o?.destinatario_nome}`);
+  toast('Ofício excluído. Ação registrada.');fecharDetalhe();await carregarOficios();
+}
+
+function editarAtual(){
+  fecharDetalhe();
+  // Abre na aba Novo Ofício com os dados preenchidos para edição
+  const o=oficios.find(x=>x.id===detailId||x.id===editId);
+  editId=detailId;
+  trocarAba('novo',document.getElementById('tab-btn-novo'));
+  setTimeout(()=>_preencherFormEdicao(editId),50);
+}
+
+function _preencherFormEdicao(id){
+  const o=oficios.find(x=>x.id===id);if(!o)return;
+  document.getElementById('f-num').value=o.num||'';
+  document.getElementById('f-envio').value=o.data?.split('T')[0]||'';
+  document.getElementById('f-origem-val').value=o.remetente||'';
+  document.getElementById('f-ref').value=o.num_externo||'';
+  document.getElementById('f-assunto').value=o.assunto||'';
+  document.getElementById('f-delegado').value=o.destinatario_nome||'';
+  document.getElementById('f-unidade-form').value=o.destinatario_cargo||'';
+  document.getElementById('f-contato').value=o.destinatario_matricula||'';
+  document.getElementById('f-email-unidade').value=o.remetente_matricula||'';
+  document.getElementById('f-prazo').value=o.prazo_vencimento?.split('T')[0]||'';
+  const canal=(o.historico||[]).find(h=>h.tipo==='canais');
+  document.getElementById('f-pae').value=canal?.pae||'sim';
+  document.getElementById('f-wpp').value=canal?.wpp||'sim';
+  document.getElementById('f-obs').value=o.obs||'';
+  const btn=document.getElementById('btn-salvar');
+  btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg> Salvar alterações';
+  btn.onclick=salvarEdicao;
+}
+
+async function salvarEdicao(){
+  const id=editId;if(!id)return;
+  const num=document.getElementById('f-num').value.trim();
+  const delegado=document.getElementById('f-delegado').value.trim();
+  const unidadeId=document.getElementById('f-unidade-form').value;
+  const prazo=document.getElementById('f-prazo').value;
+  const envio=document.getElementById('f-envio').value;
+  const origem=document.getElementById('f-origem-val').value;
+  if(!num||!delegado||!unidadeId||!prazo||!envio){alert('Preencha todos os campos obrigatórios.');return;}
+  const btn=document.getElementById('btn-salvar');
+  btn.innerHTML='<span class="spinner"></span> Salvando...';btn.disabled=true;
+  const agora=new Date().toISOString();
+  const pae=document.getElementById('f-pae').value;
+  const wpp=document.getElementById('f-wpp').value;
+  const d=diasRestantes(prazo);
+  const o=oficios.find(x=>x.id===id);
+  let historico=(o?.historico||[]).filter(h=>h.tipo!=='canais');
+  historico.push({tipo:'canais',pae,wpp,data:agora,usuario:usuarioLogado?.nome});
+  historico.push({tipo:'edicao',acao:'Editado',data:agora,usuario:usuarioLogado?.nome});
+  const payload={num,destinatario_nome:delegado,destinatario_cargo:unidadeId,destinatario_matricula:document.getElementById('f-contato').value.trim(),remetente:origem,remetente_matricula:document.getElementById('f-email-unidade').value.trim(),assunto:document.getElementById('f-assunto').value.trim(),num_externo:document.getElementById('f-ref').value.trim(),obs:document.getElementById('f-obs').value.trim(),data:envio+'T00:00:00',prazo_vencimento:prazo+'T00:00:00',prazo_dias:d,prazo_vencido:d<0,historico};
+  try{
+    await sbFetch(`/rest/v1/documentos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(payload)});
+    await auditoria('editar_oficio',`Ofício ${num} — ${delegado}`);
+    toast('✔ Ofício atualizado com sucesso!');
+    editId=null;
+    // Restaurar botão
+    btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg> Registrar Ofício';
+    btn.onclick=salvar;
+    limparForm();
+    trocarAba('lista',document.getElementById('tab-btn-lista'));
+    await carregarOficios();
+  }catch(e){alert('Erro ao salvar: '+e.message);}
+  btn.disabled=false;
+}
+
+// ═══ RELATÓRIOS ═══
+let relCache=[];
+
+function gerarRelatorio(){
+  // Inicializar datas se vazias
+  if(!document.getElementById('rel-de').value){
+    document.getElementById('rel-de').value='2024-01-01';
+    document.getElementById('rel-ate').value=hoje.toISOString().split('T')[0];
+  }
+  const de=new Date(document.getElementById('rel-de').value+'T00:00:00');
+  const ate=new Date(document.getElementById('rel-ate').value+'T23:59:59');
+  const origem=document.getElementById('rel-origem').value;
+
+  let dados=[...oficios].filter(o=>{
+    const dt=new Date(o.data||'2000-01-01');
+    if(dt<de||dt>ate) return false;
+    if(origem&&o.remetente!==origem) return false;
+    return true;
+  });
+  relCache=dados;
+
+  const total=dados.length;
+  const pendentes=dados.filter(o=>o.status==='pendente').length;
+  const respondidos=dados.filter(o=>o.status==='respondido').length;
+  const atendidos=dados.filter(o=>o.status==='atendido').length;
+  const vencidos=dados.filter(o=>o.status!=='atendido'&&diasRestantes(o.prazo_vencimento?.split('T')[0])<0).length;
+  const taxaResposta=total?Math.round((respondidos+atendidos)/total*100):0;
+
+  // KPIs
+  document.getElementById('rel-kpis').innerHTML=[
+    {val:total,       label:'Total de ofícios',   cor:'#1a3a6b', bg:'#E6F1FB'},
+    {val:pendentes,   label:'Pendentes',           cor:'#633806', bg:'#FAEEDA'},
+    {val:respondidos, label:'Respondidos',         cor:'#0C447C', bg:'#dbeafe'},
+    {val:atendidos,   label:'Atendidos',           cor:'#27500A', bg:'#EAF3DE'},
+    {val:vencidos,    label:'Vencidos',            cor:'#791F1F', bg:'#FCEBEB'},
+    {val:taxaResposta+'%', label:'Taxa de resposta', cor:'#1a3a6b', bg:'#f0f4ff'},
+  ].map(k=>`<div class="kpi-card" style="border-top:3px solid ${k.cor};background:${k.bg};"><div class="kpi-val" style="color:${k.cor};font-size:22px;">${k.val}</div><div class="kpi-label">${k.label}</div></div>`).join('');
+
+  // Por status
+  const statusMap={'pendente':'Pendente','respondido':'Respondido','atendido':'Atendido'};
+  const statusCor={'pendente':'#633806','respondido':'#0C447C','atendido':'#27500A'};
+  const statusBg={'pendente':'#FAEEDA','respondido':'#E6F1FB','atendido':'#EAF3DE'};
+  document.getElementById('rel-por-status').innerHTML=Object.keys(statusMap).map(s=>{
+    const n=dados.filter(o=>o.status===s).length;
+    const pct=total?Math.round(n/total*100):0;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0e8;">
+      <span class="badge-status" style="background:${statusBg[s]};color:${statusCor[s]};min-width:90px;text-align:center;">${statusMap[s]}</span>
+      <div style="flex:1;background:#f0f0e8;border-radius:4px;height:8px;">
+        <div style="width:${pct}%;background:${statusCor[s]};height:8px;border-radius:4px;transition:width .4s;"></div>
+      </div>
+      <span style="font-family:monospace;font-size:13px;font-weight:700;color:${statusCor[s]};min-width:30px;text-align:right;">${n}</span>
+      <span style="font-size:11px;color:#888;min-width:36px;">${pct}%</span>
+    </div>`;
+  }).join('');
+
+  // Por origem
+  const origens=['MP','Judiciário','Corregedoria','Outro'];
+  const origemLabels={MP:'Ministério Público',Judiciário:'Judiciário',Corregedoria:'Corregedoria',Outro:'Outro'};
+  document.getElementById('rel-por-origem').innerHTML=origens.map(o=>{
+    const n=dados.filter(x=>x.remetente===o).length;
+    if(!n) return '';
+    const pct=total?Math.round(n/total*100):0;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0e8;">
+      <span style="font-size:13px;min-width:160px;color:#333;">${origemLabels[o]}</span>
+      <div style="flex:1;background:#f0f0e8;border-radius:4px;height:8px;">
+        <div style="width:${pct}%;background:#1a3a6b;height:8px;border-radius:4px;"></div>
+      </div>
+      <span style="font-family:monospace;font-size:13px;font-weight:700;color:#1a3a6b;min-width:30px;text-align:right;">${n}</span>
+      <span style="font-size:11px;color:#888;min-width:36px;">${pct}%</span>
+    </div>`;
+  }).join('')||'<div class="vazio" style="padding:20px;">Nenhum dado no período.</div>';
+
+  // Por delegado — enviados
+  const porDelegado={};
+  dados.forEach(o=>{if(o.destinatario_nome)porDelegado[o.destinatario_nome]=(porDelegado[o.destinatario_nome]||0)+1;});
+  const delOrdem=Object.entries(porDelegado).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('rel-por-delegado').innerHTML=delOrdem.length
+    ?`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="background:#f5f5f0;">
+          <th style="text-align:left;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Delegado</th>
+          <th style="text-align:left;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Unidade</th>
+          <th style="text-align:center;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Total</th>
+          <th style="text-align:center;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Pendentes</th>
+          <th style="text-align:center;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Atendidos</th>
+        </tr></thead><tbody>
+        ${delOrdem.map(([del,tot],i)=>{
+          const ofDel=dados.filter(o=>o.destinatario_nome===del);
+          const pend=ofDel.filter(o=>o.status==='pendente').length;
+          const atend=ofDel.filter(o=>o.status==='atendido').length;
+          const unid=unidadeNome(ofDel[0]?.destinatario_cargo);
+          return `<tr style="background:${i%2?'#fafaf8':'#fff'};">
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;font-weight:500;">${del}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;font-size:12px;color:#555;">${unid}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;text-align:center;font-family:monospace;font-weight:700;color:#1a3a6b;">${tot}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;text-align:center;"><span style="background:#FAEEDA;color:#633806;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">${pend}</span></td>
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;text-align:center;"><span style="background:#EAF3DE;color:#27500A;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">${atend}</span></td>
+          </tr>`;
+        }).join('')}</tbody></table></div>`
+    :'<div class="vazio" style="padding:20px;">Nenhum dado no período.</div>';
+
+  // Por delegado — respondidos/atendidos
+  const respondidosPorDel=Object.entries(porDelegado).map(([del,tot])=>{
+    const ofDel=dados.filter(o=>o.destinatario_nome===del);
+    const resp=ofDel.filter(o=>o.status==='respondido'||o.status==='atendido').length;
+    const taxa=tot?Math.round(resp/tot*100):0;
+    return{del,tot,resp,taxa};
+  }).sort((a,b)=>b.taxa-a.taxa);
+
+  document.getElementById('rel-respondidos-delegado').innerHTML=respondidosPorDel.length
+    ?`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="background:#f5f5f0;">
+          <th style="text-align:left;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Delegado</th>
+          <th style="text-align:center;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Enviados</th>
+          <th style="text-align:center;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Respondidos</th>
+          <th style="text-align:left;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Taxa</th>
+        </tr></thead><tbody>
+        ${respondidosPorDel.map(({del,tot,resp,taxa},i)=>{
+          const cor=taxa>=75?'#27500A':taxa>=40?'#633806':'#791F1F';
+          const bg=taxa>=75?'#EAF3DE':taxa>=40?'#FAEEDA':'#FCEBEB';
+          return `<tr style="background:${i%2?'#fafaf8':'#fff'};">
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;font-weight:500;">${del}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;text-align:center;font-family:monospace;font-weight:700;color:#1a3a6b;">${tot}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;text-align:center;font-family:monospace;font-weight:700;color:#27500A;">${resp}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="flex:1;background:#f0f0e8;border-radius:4px;height:8px;min-width:80px;">
+                  <div style="width:${taxa}%;background:${cor};height:8px;border-radius:4px;"></div>
+                </div>
+                <span style="font-size:12px;font-weight:700;color:${cor};background:${bg};padding:2px 7px;border-radius:10px;">${taxa}%</span>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}</tbody></table></div>`
+    :'<div class="vazio" style="padding:20px;">Nenhum dado no período.</div>';
+
+  // Ranking de atrasos por delegado
+  const rankingMap={};
+  dados.forEach(o=>{
+    if(!o.destinatario_nome) return;
+    const del=o.destinatario_nome;
+    if(!rankingMap[del]) rankingMap[del]={nome:del,unidade:unidadeNome(o.destinatario_cargo),vencidos:0,pendentes:0,totalDiasAtraso:0,maiorAtraso:0};
+    const d=diasRestantes(o.prazo_vencimento?.split('T')[0]);
+    if(o.status!=='atendido'){
+      rankingMap[del].pendentes++;
+      if(d<0){
+        rankingMap[del].vencidos++;
+        rankingMap[del].totalDiasAtraso+=Math.abs(d);
+        if(Math.abs(d)>rankingMap[del].maiorAtraso) rankingMap[del].maiorAtraso=Math.abs(d);
+      }
+    }
+  });
+  const ranking=Object.values(rankingMap)
+    .filter(r=>r.vencidos>0||r.pendentes>0)
+    .sort((a,b)=>b.vencidos-a.vencidos||b.totalDiasAtraso-a.totalDiasAtraso);
+
+  const medalhas=['🥇','🥈','🥉'];
+  document.getElementById('rel-ranking-atrasos').innerHTML=ranking.length
+    ?`<div style="font-size:12px;color:#888;margin-bottom:10px;">Ordenado por quantidade de ofícios vencidos — do maior para o menor atraso</div>
+      <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="background:#f5f5f0;">
+          <th style="text-align:center;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;width:40px;">#</th>
+          <th style="text-align:left;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Delegado</th>
+          <th style="text-align:left;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Unidade</th>
+          <th style="text-align:center;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#791F1F;text-transform:uppercase;">Vencidos</th>
+          <th style="text-align:center;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#633806;text-transform:uppercase;">Pendentes</th>
+          <th style="text-align:center;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Total dias atraso</th>
+          <th style="text-align:center;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Maior atraso</th>
+          <th style="text-align:left;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Situação</th>
+        </tr></thead><tbody>
+        ${ranking.map((r,i)=>{
+          const corLinha=i===0?'#fdf5f5':i===1?'#fdf8f5':i===2?'#fdfaf5':'#fff';
+          const situacao=r.vencidos===0?{txt:'Em dia',bg:'#EAF3DE',cor:'#27500A'}
+            :r.vencidos<=2?{txt:'Atenção',bg:'#FAEEDA',cor:'#633806'}
+            :r.vencidos<=5?{txt:'Crítico',bg:'#fce7d4',cor:'#7c3300'}
+            :{txt:'Grave',bg:'#FCEBEB',cor:'#791F1F'};
+          return `<tr style="background:${corLinha};">
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;text-align:center;font-size:16px;">${medalhas[i]||String(i+1)+'º'}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;font-weight:600;">${r.nome}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;font-size:12px;color:#555;">${r.unidade}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;text-align:center;"><span style="background:#FCEBEB;color:#791F1F;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:700;">${r.vencidos}</span></td>
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;text-align:center;"><span style="background:#FAEEDA;color:#633806;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:700;">${r.pendentes}</span></td>
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;text-align:center;font-family:monospace;font-weight:700;color:#791F1F;">${r.totalDiasAtraso}d</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;text-align:center;font-family:monospace;font-weight:700;color:#856404;">${r.maiorAtraso}d</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;"><span style="background:${situacao.bg};color:${situacao.cor};padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;">${situacao.txt}</span></td>
+          </tr>`;
+        }).join('')}</tbody></table></div>`
+    :'<div class="vazio" style="padding:20px;">✔ Nenhum ofício vencido no período.</div>';
+
+  // Vencidos/pendentes há mais tempo
+  const vencList=dados
+    .filter(o=>o.status!=='atendido')
+    .map(o=>({...o,dias:diasRestantes(o.prazo_vencimento?.split('T')[0])}))
+    .filter(o=>o.dias<0)
+    .sort((a,b)=>a.dias-b.dias);
+  document.getElementById('rel-vencidos').innerHTML=vencList.length
+    ?`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="background:#f5f5f0;">
+          <th style="text-align:left;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Nº Ofício</th>
+          <th style="text-align:left;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Delegado</th>
+          <th style="text-align:left;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Prazo</th>
+          <th style="text-align:left;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Atraso</th>
+          <th style="text-align:left;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Status</th>
+        </tr></thead><tbody>
+        ${vencList.map((o,i)=>`<tr style="background:${i%2?'#fdf8f8':'#fff'};" onclick="abrirDetalhe('${o.id}')" title="Clique para abrir">
+          <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;" class="proc-num">${o.num||'—'}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;">${o.destinatario_nome||'—'}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;font-size:12px;">${fmtDate(o.prazo_vencimento?.split('T')[0])}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;"><span style="background:#FCEBEB;color:#791F1F;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">${Math.abs(o.dias)}d</span></td>
+          <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;"><span class="badge-status bs-pendente">${o.status}</span></td>
+        </tr>`).join('')}</tbody></table></div>`
+    :'<div class="vazio" style="padding:20px;">✔ Nenhum ofício vencido no período.</div>';
+
+  // Ficha por delegado — ofícios atrasados
+  const fichaMap={};
+  dados.forEach(o=>{
+    if(!o.destinatario_nome)return;
+    const del=o.destinatario_nome;
+    const d=diasRestantes(o.prazo_vencimento?.split('T')[0]);
+    if(o.status!=='atendido'&&d<0){
+      if(!fichaMap[del])fichaMap[del]={nome:del,unidade:unidadeNome(o.destinatario_cargo),oficios:[]};
+      fichaMap[del].oficios.push({...o,diasAtraso:Math.abs(d)});
+    }
+  });
+  const fichaLista=Object.values(fichaMap).sort((a,b)=>b.oficios.length-a.oficios.length);
+
+  document.getElementById('rel-ficha-delegado').innerHTML=fichaLista.length
+    ?fichaLista.map((del,idx)=>`
+      <div style="border:1px solid #e0e0d8;border-radius:8px;margin-bottom:10px;overflow:hidden;">
+        <div onclick="toggleFicha('ficha-${idx}')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f5f5f0;cursor:pointer;user-select:none;" onmouseover="this.style.background='#eef0f8'" onmouseout="this.style.background='#f5f5f0'">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:14px;font-weight:700;color:#0d2545;">${del.nome}</span>
+            <span style="font-size:12px;color:#555;">${del.unidade}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="background:#FCEBEB;color:#791F1F;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:700;">${del.oficios.length} atrasado(s)</span>
+            <span style="font-size:16px;color:#888;" id="ico-ficha-${idx}">▼</span>
+          </div>
+        </div>
+        <div id="ficha-${idx}" style="display:none;padding:0 16px 14px;">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:12px;">
+            <thead><tr style="background:#fafaf4;">
+              <th style="text-align:left;padding:7px 10px;border-bottom:1px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Nº Ofício</th>
+              <th style="text-align:left;padding:7px 10px;border-bottom:1px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Assunto</th>
+              <th style="text-align:left;padding:7px 10px;border-bottom:1px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Origem</th>
+              <th style="text-align:left;padding:7px 10px;border-bottom:1px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Envio</th>
+              <th style="text-align:left;padding:7px 10px;border-bottom:1px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Prazo</th>
+              <th style="text-align:center;padding:7px 10px;border-bottom:1px solid #e0e0d8;font-size:11px;font-weight:700;color:#791F1F;text-transform:uppercase;">Atraso</th>
+              <th style="text-align:left;padding:7px 10px;border-bottom:1px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Status</th>
+            </tr></thead>
+            <tbody>
+              ${del.oficios.sort((a,b)=>b.diasAtraso-a.diasAtraso).map((o,i)=>`
+                <tr style="background:${i%2?'#fdf8f8':'#fff'};cursor:pointer;" onclick="abrirDetalhe('${o.id}')">
+                  <td style="padding:7px 10px;border-bottom:1px solid #f0f0e8;" class="proc-num">${o.num||'—'}</td>
+                  <td style="padding:7px 10px;border-bottom:1px solid #f0f0e8;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${o.assunto||''}">${(o.assunto||'—').length>40?(o.assunto||'').substring(0,40)+'…':o.assunto||'—'}</td>
+                  <td style="padding:7px 10px;border-bottom:1px solid #f0f0e8;"><span class="badge-status bs-respondido">${o.remetente||'—'}</span></td>
+                  <td style="padding:7px 10px;border-bottom:1px solid #f0f0e8;font-size:12px;white-space:nowrap;">${fmtDate(o.data?.split('T')[0])}</td>
+                  <td style="padding:7px 10px;border-bottom:1px solid #f0f0e8;font-size:12px;white-space:nowrap;">${fmtDate(o.prazo_vencimento?.split('T')[0])}</td>
+                  <td style="padding:7px 10px;border-bottom:1px solid #f0f0e8;text-align:center;"><span style="background:#FCEBEB;color:#791F1F;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">${o.diasAtraso}d</span></td>
+                  <td style="padding:7px 10px;border-bottom:1px solid #f0f0e8;"><span class="badge-status bs-pendente">${o.status}</span></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`).join('')
+    :'<div class="vazio" style="padding:20px;">✔ Nenhum delegado com ofícios atrasados no período.</div>';
+
+  // Por unidade
+  const porUnidade={};
+  dados.forEach(o=>{
+    const u=unidadeNome(o.destinatario_cargo);
+    if(!porUnidade[u])porUnidade[u]={total:0,atendidos:0,pendentes:0};
+    porUnidade[u].total++;
+    if(o.status==='atendido')porUnidade[u].atendidos++;
+    if(o.status==='pendente')porUnidade[u].pendentes++;
+  });
+  const unidOrdem=Object.entries(porUnidade).sort((a,b)=>b[1].total-a[1].total);
+  document.getElementById('rel-por-unidade').innerHTML=unidOrdem.length
+    ?`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="background:#f5f5f0;">
+          <th style="text-align:left;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Unidade</th>
+          <th style="text-align:center;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Total</th>
+          <th style="text-align:center;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Pendentes</th>
+          <th style="text-align:center;padding:8px 10px;border-bottom:2px solid #e0e0d8;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Atendidos</th>
+        </tr></thead><tbody>
+        ${unidOrdem.map(([unid,v],i)=>`<tr style="background:${i%2?'#fafaf8':'#fff'};">
+          <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;">${unid}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;text-align:center;font-family:monospace;font-weight:700;color:#1a3a6b;">${v.total}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;text-align:center;"><span style="background:#FAEEDA;color:#633806;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">${v.pendentes}</span></td>
+          <td style="padding:8px 10px;border-bottom:1px solid #f0f0e8;text-align:center;"><span style="background:#EAF3DE;color:#27500A;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">${v.atendidos}</span></td>
+        </tr>`).join('')}</tbody></table></div>`
+    :'<div class="vazio" style="padding:20px;">Nenhum dado no período.</div>';
+}
+
+function exportarRelCSV(){
+  if(!relCache.length){alert('Gere o relatório primeiro.');return;}
+  const campos=['num','data','remetente','num_externo','assunto','destinatario_nome','destinatario_cargo','prazo_vencimento','status'];
+  const cab=['Nº Ofício','Data Envio','Origem','Ref. PAE/Email','Assunto','Delegado','Unidade','Prazo','Status'];
+  const linhas=[cab.join(';')];
+  relCache.forEach(o=>{
+    linhas.push(campos.map(c=>{
+      let v=o[c]??'';
+      if(c==='data'||c==='prazo_vencimento') v=v?fmtDate(v.split('T')[0]):'';
+      if(c==='destinatario_cargo') v=unidadeNome(v);
+      return `"${String(v).replace(/"/g,"''")}"`;
+    }).join(';'));
+  });
+  const blob=new Blob(['\uFEFF'+linhas.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`cgpc_oficios_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+function toggleFicha(id){
+  const el=document.getElementById(id);
+  const idx=id.replace('ficha-','');
+  const ico=document.getElementById('ico-ficha-'+idx);
+  if(el.style.display==='none'){
+    el.style.display='block';
+    if(ico)ico.textContent='▲';
+  }else{
+    el.style.display='none';
+    if(ico)ico.textContent='▼';
+  }
+}
+
+function fecharDetalhe(e){
+  if(e&&e.target!==document.getElementById('modal-detalhe'))return;
+  document.getElementById('modal-detalhe').classList.remove('open');
+  detailId=null;
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')fecharDetalhe();});
+</script>
+</body>
+</html>
